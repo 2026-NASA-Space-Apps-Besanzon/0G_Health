@@ -1,7 +1,7 @@
-# [Project name / Nom du projet]
+# Health Monitoring Software for Astronauts on Space Missions
 
-- **Challenge:** [challenge name](link to the challenge page)
-- **Space Apps team page / Page de l'équipe :** [link](https://www.spaceappschallenge.org/2026/find-a-team/)
+- **Challenge:** [Health Monitoring Software for Astronauts on Space Missions(link to the challenge page)](https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/)
+- **Space Apps team page / Page de l'équipe :** [[link](https://www.spaceappschallenge.org/2026/find-a-team/)](https://www.spaceappschallenge.org/2026/find-a-team/0g-health/?tab=details)
 - **Local event:** NASA Space Apps Challenge 2026 – Besançon (14–15 Nov 2026)
 
 ## Team members / Membres
