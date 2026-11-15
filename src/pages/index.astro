@@ -1,0 +1,356 @@
+---
+import Base from '../layouts/Base.astro';
+import { SENSORS, TAGS } from '../data/sensors';
+import { story } from '../lib/sim';
+const S = story();
+const HRP = 'https://www.nasa.gov/hrp/hazards/';
+---
+<Base>
+  <div class="counter" aria-hidden="true">00 / 15</div>
+  <div class="ruler" aria-hidden="true"></div>
+
+  <section class="ch in" id="c00" data-ch="c00" style="--len:1.6">
+    <div class="ch__pin">
+      <div class="stage stage--bleed"></div>
+      <div class="ch__head">
+        <p class="label rv">Team 0G Health · NASA Space Apps 2026 · Astronaut health self-check</p>
+        <h1 class="h rv d1" style="margin-top:18px">Nobody notices a&nbsp;slow change.</h1>
+        <p class="sub rv d2">Baseline is a two-minute daily self-check that learns each astronaut's normal, and flags slow drift weeks before a medical limit.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch" id="c01" data-ch="c01" style="--len:3">
+    <div class="ch__pin">
+      <div class="ch__head">
+        <h2 class="h rv">On Mars, the doctor is up to twenty minutes away. Each&nbsp;way.</h2>
+      </div>
+      <div class="stage"></div>
+      <p class="src">Delay figure: <a href={HRP} target="_blank" rel="noopener">NASA Human Research Program, 5 hazards</a></p>
+    </div>
+  </section>
+
+  <section class="ch" id="c02" data-ch="c02" style="--len:3">
+    <div class="ch__pin">
+      <div class="ch__head">
+        <h2 class="h rv">The dangerous changes are the slow&nbsp;ones.</h2>
+        <p class="sub rv d1">One reading through one day. Keep scrolling: today always looks like yesterday.</p>
+      </div>
+      <div class="stage"></div>
+      <p class="src">Illustration, not data</p>
+    </div>
+  </section>
+
+  <section class="ch" id="c03" data-ch="c03" style="--len:3">
+    <div class="ch__pin">
+      <div class="ch__head">
+        <h2 class="h rv">Medical limits are built for everyone. Drift is&nbsp;personal.</h2>
+      </div>
+      <div class="stage"></div>
+      <p class="src">Illustration, not data</p>
+    </div>
+  </section>
+
+  <section class="ch" id="c04" data-ch="c04" style="--len:5">
+    <div class="ch__pin">
+      <div class="ch__head">
+        <h2 class="h h--two rv"><span data-on="flag">Flagged on day&nbsp;{S.flagDay}.</span> <span data-on="limit">The limit was day&nbsp;{S.limitDay}.</span></h2>
+      </div>
+      <div class="stage">
+        <input class="sr" type="range" min="1" max="150" value="1" aria-label="Mission day" />
+      </div>
+      <p class="src">Simulated scenario · one crew member's sleep</p>
+    </div>
+  </section>
+
+
+  <section class="ch" id="c05" data-ch="c05" style="--len:3.5">
+    <div class="ch__pin">
+      <div class="ch__head">
+        <h2 class="h rv">Two minutes, every&nbsp;morning.</h2>
+      </div>
+      <div class="stage check">
+        <ol class="check__steps">
+          <li data-step class="on"><span class="label">01</span><b>Wear</b><span>Headband on. Sit still.</span></li>
+          <li data-step><span class="label">02</span><b>Check</b><span>Today against your normal.</span></li>
+          <li data-step><span class="label">03</span><b>Act</b><span>One action. Who to tell.</span></li>
+        </ol>
+        <div class="mc panel" data-s="0">
+          <div class="mc__top">
+            <svg viewBox="0 0 44 44" width="44" height="44" aria-hidden="true">
+              <circle cx="22" cy="22" r="18" class="s-hair" stroke-width="3" />
+              <circle class="mc__ring s-you" cx="22" cy="22" r="18" stroke-width="3" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" transform="rotate(-90 22 22)" />
+            </svg>
+            <div><div class="mono mc__time">0:00</div><div class="label">Morning check · day 104</div></div>
+          </div>
+          <div class="mc__rows">
+            <div class="mc__row"><i class="dot dot--drift"></i><span>Sleep</span><b class="mono">6.4 h</b></div>
+            <div class="mc__row"><i class="dot dot--ok"></i><span>Resting pulse</span><b class="mono">54 bpm</b></div>
+            <div class="mc__row"><i class="dot dot--ok"></i><span>Heart-rhythm variability</span><b class="mono">66 ms</b></div>
+            <div class="mc__row"><i class="dot dot--ok"></i><span>Skin temperature</span><b class="mono">34.6 °C</b></div>
+          </div>
+          <div class="mc__act">
+            <p class="mc__say">Sleep has drifted for 9&nbsp;nights.</p>
+            <p class="mc__do">Tonight: dim the lights 30 minutes earlier.</p>
+            <div class="mc__ladder label"><span class="on">You</span><i></i><span>Crew medical officer</span><i></i><span>Flight surgeon</span></div>
+          </div>
+        </div>
+      </div>
+      <p class="src">Simulated readings</p>
+    </div>
+  </section>
+
+  <section class="ch" id="cap" data-ch="c06" style="--len:8">
+    <div class="ch__pin">
+      <div class="ch__head">
+        <h2 class="h rv">One cap, six&nbsp;sensors.</h2>
+        <p class="sub rv d1">Built into the lining of the comms cap astronauts already wear.</p>
+      </div>
+      <div class="stage">
+        <nav class="rail" aria-label="Sensors">
+          {SENSORS.map((s) => <button data-id={s.id} aria-current="false"><span class="label">{s.no}</span><b>{s.short === 'Temp' ? 'Skin temp' : s.short}</b></button>)}
+        </nav>
+        <div class="sds" aria-live="polite">
+          {SENSORS.map((s, i) => (
+            <article class="sd" data-id={s.id}>
+              <p class="label sd__no"><span>{s.no} · {s.grams ? `${s.grams} g est.` : 'Existing part'}{s.future ? ' · Future' : ''}</span><span>{i + 1} / 6</span></p>
+              <h3>{s.name}</h3>
+              <dl>
+                <div><dt class="label">Does</dt><dd>{s.job}</dd></div>
+                <div class="sd__sits"><dt class="label">Sits</dt><dd>{s.sits}</dd></div>
+                <div><dt class="label">Watches</dt><dd class="sd__w">{s.watches}</dd></div>
+                <div><dt class="label">Becomes</dt><dd>
+                  <ul>{s.shows.map((r) => <li><span>{r.label}</span><span class="mono sd__v">{r.value}<small> {r.unit}</small></span><span class={`tag tag--${r.tag}`}>{TAGS[r.tag]}</span></li>)}</ul>
+                </dd></div>
+                <div><dt class="label">Cannot</dt><dd class="sd__lim">{s.limit}</dd></div>
+              </dl>
+            </article>
+          ))}
+        </div>
+      </div>
+      <p class="src">Weights are design estimates · values simulated</p>
+    </div>
+  </section>
+
+  <section class="ch" id="c08" data-ch="c08" style="--len:2">
+    <div class="ch__pin">
+      <div class="ch__head">
+        <h2 class="h rv">We say how we&nbsp;know.</h2>
+        <p class="sub rv d1">Every reading carries one of four tags. No number pretends to be more than it is.</p>
+      </div>
+      <div class="say">
+        <article class="say__card panel"><span class="label">Resting pulse</span><p class="mono say__v">54 <small>bpm</small></p><span class="tag tag--sensed">{TAGS.sensed}</span><p class="say__n">A sensor measured it directly.</p></article>
+        <article class="say__card panel"><span class="label">Alertness</span><p class="mono say__v">72 <small>± 6</small></p><span class="tag tag--ml">{TAGS.ml}</span><p class="say__n">A model's best guess, shown with how sure it is.</p></article>
+        <article class="say__card panel"><span class="label">Eye chart</span><p class="mono say__v">10 <small>lines</small></p><span class="tag tag--you">{TAGS.you}</span><p class="say__n">You did the test. The tool keeps the record.</p></article>
+        <article class="say__card panel"><span class="label">Radiation</span><p class="mono say__v">0.62 <small>mSv/day</small></p><span class="tag tag--ship">{TAGS.ship}</span><p class="say__n">Read from the spacecraft's own instruments.</p></article>
+      </div>
+      <p class="src">Simulated readings</p>
+    </div>
+  </section>
+
+  <section class="ch" id="c09" data-ch="c09" style="--len:3">
+    <div class="ch__pin">
+      <div class="ch__head">
+        <h2 class="h rv">For fourteen days, it only&nbsp;listens.</h2>
+      </div>
+      <div class="stage"></div>
+      <p class="src">Illustration, not data</p>
+    </div>
+  </section>
+
+  <section class="ch" id="c10" data-ch="c10" style="--len:2.2">
+    <div class="ch__pin">
+      <div class="ch__head">
+        <h2 class="h rv">Cap for the big moments. Headband for the&nbsp;rest.</h2>
+        <div class="chips rv d1" style="margin-top:22px">
+          <button class="chip" data-mode="day" aria-pressed="true">Ordinary day</button>
+          <button class="chip" data-mode="eva" aria-pressed="false">Spacewalk day</button>
+        </div>
+      </div>
+      <div class="stage"></div>
+    </div>
+  </section>
+
+  <section class="ch" id="c11" data-ch="c11" style="--len:2.2">
+    <div class="ch__pin">
+      <div class="ch__head">
+        <h2 class="h rv">Days one to three: your head moves, your stomach&nbsp;objects.</h2>
+      </div>
+      <div class="stage"></div>
+      <p class="src">Simulated · space motion sickness: <a href={HRP} target="_blank" rel="noopener">NASA HRP</a></p>
+    </div>
+  </section>
+
+  <section class="ch" id="c12" data-ch="c12" style="--len:5">
+    <div class="ch__pin">
+      <div class="ch__head">
+        <h2 class="h rv">On a spacewalk, three&nbsp;numbers.</h2>
+      </div>
+      <div class="stage"></div>
+    </div>
+  </section>
+
+  <section class="ch" id="c13" data-ch="c13" style="--len:2">
+    <div class="ch__pin">
+      <div class="ch__head">
+        <h2 class="h rv">Raw brainwaves never leave the&nbsp;ship.</h2>
+        <p class="sub rv d1">Voice works the same way: opt-in, analysed on the device, never recorded.</p>
+      </div>
+      <div class="stage"></div>
+    </div>
+  </section>
+
+  <section class="ch ch--paper" id="c14" data-ch="c14" style="--len:2">
+    <div class="ch__pin">
+      <div class="ch__head">
+        <h2 class="h rv">What the cap cannot&nbsp;see.</h2>
+        <p class="sub rv d1">Three of the biggest long-term risks are out of its reach. The tool still tracks them, and says where each number comes from.</p>
+      </div>
+      <div class="cant">
+        <article class="rv d1">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><path class="s" d="M14 34L34 14M34 14a4 4 0 1 1 6-4a4 4 0 1 1-4 6M14 34a4 4 0 1 1-6 4a4 4 0 1 1 4-6" /></svg>
+          <h3>Bone loss</h3><p>You log loading exercise. Density is scanned before and after the mission.</p><span class="tag tag--you">{TAGS.you}</span>
+        </article>
+        <article class="rv d2">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><path class="s" d="M4 24c6-9 13-13 20-13s14 4 20 13c-6 9-13 13-20 13S10 33 4 24z" /><circle class="s" cx="24" cy="24" r="6" /></svg>
+          <h3>Vision change</h3><p>A weekly eye chart on the tablet, each eye.</p><span class="tag tag--you">{TAGS.you}</span>
+        </article>
+        <article class="rv d3">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><circle class="s" cx="24" cy="24" r="4" /><path class="s" d="M24 14V5M24 43v-9M14 24H5M43 24h-9M17 17l-6-6M37 37l-6-6M31 17l6-6M11 37l6-6" /></svg>
+          <h3>Radiation</h3><p>Read from the ship's dosimeter, kept as your running total.</p><span class="tag tag--ship">{TAGS.ship}</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch" id="c15" data-ch="c15">
+    <div class="ch__pin">
+      <div class="stage stage--bleed"></div>
+      <div class="ch__head end">
+        <h2 class="h rv">Run your own morning&nbsp;check.</h2>
+        <p class="sub rv d1">Watch one simulated crew member fly 180 days to Mars, and see what the tool tells them along the way.</p>
+        <p class="rv d2 end__cta"><a class="btn" href="/app">Open the tool <span aria-hidden="true">→</span></a></p>
+      </div>
+      <footer class="foot label">
+        <span>Baseline by team 0G Health · NASA Space Apps Challenge 2026 · Health monitoring software</span>
+        <span>A prototype. All data simulated. Not a medical device.</span>
+      </footer>
+    </div>
+  </section>
+
+  <script>
+    import { chrome } from '../lib/motion';
+    import * as A from '../story/a';
+    import * as B from '../story/b';
+    import * as C from '../story/c';
+    const all: Record<string, (s: HTMLElement) => void> = { ...A, ...B, ...C };
+    document.querySelectorAll<HTMLElement>('[data-ch]').forEach((s) => all[s.dataset.ch!]?.(s));
+    chrome();
+  </script>
+</Base>
+
+<style>
+
+  /* 05 */
+  .check { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 380px) minmax(0, 1fr); gap: clamp(20px, 3vw, 48px); align-items: center; }
+  .check__steps { list-style: none; padding: 0; display: grid; gap: 22px; justify-self: end; width: max-content; max-width: 100%; }
+  .check__steps li { display: grid; grid-template-columns: 34px auto; column-gap: 8px; color: var(--line); transition: color 0.3s; }
+  .check__steps li .label { grid-row: span 2; padding-top: 9px; color: inherit; }
+  .check__steps li b { font-size: clamp(24px, 2.6vw, 36px); font-weight: 600; line-height: 1.1; }
+  .check__steps li span:last-child { font-size: 15px; white-space: nowrap; }
+  .check__steps li.on { color: var(--bone); }
+  .check__steps li.on span:last-child { color: var(--mute); }
+  .mc { padding: 22px; display: grid; gap: 18px; align-self: center; }
+  .mc__top { display: flex; gap: 14px; align-items: center; }
+  .mc__time { font-size: 28px; line-height: 1; margin-bottom: 4px; }
+  .mc__rows { display: grid; }
+  .mc__row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line); font-size: 15px; opacity: 0; transform: translateX(-10px); transition: opacity 0.3s, transform 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
+  .mc__row b { margin-left: auto; font-weight: 400; }
+  .mc__row.on { opacity: 1; transform: none; }
+  .mc__act { border-top: 1px solid var(--line); padding-top: 16px; opacity: 0; transform: translateY(10px) scale(0.98); transition: opacity 0.3s, transform 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
+  .mc__act.on { opacity: 1; transform: none; }
+  .mc__say { font-size: 21px; font-weight: 600; line-height: 1.2; color: var(--drift); }
+  .mc__do { margin-top: 6px; font-size: 16px; }
+  .mc__ladder { display: flex; align-items: center; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .mc__ladder i { width: 14px; height: 1px; background: var(--mute); }
+  .mc__ladder .on { color: var(--bone); }
+  @media (max-width: 980px) {
+    .check { grid-template-columns: 1fr; align-content: start; gap: 16px; }
+    .check__steps { justify-self: start; grid-auto-flow: column; gap: 18px; }
+    .check__steps li { grid-template-columns: auto; }
+    .check__steps li .label, .check__steps li span:last-child { display: none; }
+    .check__steps li b { font-size: 20px; }
+    .mc { padding: 16px; gap: 12px; }
+    .mc__row { padding: 8px 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .mc__row, .mc__act { transition: none; } }
+
+  /* 06 · spec sheet */
+  #cap .sub { transition: opacity 0.3s; }
+  #cap:global(.walk) .sub { opacity: 0; }
+  .rail, .sds { opacity: 0; transition: opacity 0.35s ease; }
+  #cap:global(.walk) .rail, #cap:global(.walk) .sds { opacity: 1; }
+  .rail { position: absolute; z-index: 3; left: 0; top: 50%; transform: translateY(-50%); display: grid; width: 168px; padding-left: 14px; }
+  .rail::before, .rail::after { content: ''; position: absolute; left: 0; top: 0; width: 1px; height: 100%; background: var(--line); }
+  .rail::after { background: var(--you); width: 2px; left: -0.5px; transform-origin: top; transform: scaleY(var(--prog, 0)); }
+  .rail button { display: grid; grid-template-columns: 44px 1fr; align-items: baseline; text-align: left; padding: 11px 0; color: var(--mute); transition: color 0.2s, transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
+  .rail button b { font-weight: 500; font-size: 17px; }
+  .rail button .label { color: inherit; }
+  .rail button:hover { color: var(--bone); }
+  .rail button[aria-current='true'] { color: var(--bone); transform: translateX(6px); }
+  .rail button[aria-current='true'] .label { color: var(--you); }
+  .sds { position: absolute; z-index: 3; right: 0; top: 0; bottom: 0; width: min(440px, 36vw); display: grid; align-items: center; pointer-events: none; }
+  .sd { grid-area: 1 / 1; display: grid; gap: clamp(8px, 1.5svh, 14px); opacity: 0; transform: translateY(16px); transition: opacity 0.2s ease, transform 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.25); }
+  .sd.on { opacity: 1; transform: none; transition-delay: 0.08s; }
+  .sd__no { display: flex; justify-content: space-between; color: var(--you); }
+  .sd__no span:last-child { color: var(--mute); }
+  .sd h3 { font-size: clamp(26px, 2.8vw, 40px); font-weight: 600; line-height: 1.04; letter-spacing: -0.02em; }
+  .sd dl { display: grid; border-top: 1px solid var(--line); }
+  .sd dl > div { display: grid; grid-template-columns: 82px 1fr; gap: 10px; padding: clamp(7px, 1.3svh, 12px) 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+  .sd dd { margin: 0; font-size: 15.5px; line-height: 1.35; color: var(--bone); }
+  .sd__w { color: var(--you) !important; font-weight: 600; font-size: 17px !important; }
+  .sd__lim { color: var(--mute) !important; }
+  .sd ul { list-style: none; padding: 0; display: grid; gap: 7px; }
+  .sd li { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; }
+  .sd__v { color: var(--bone); } .sd__v small { color: var(--mute); font-size: 0.8em; }
+  .sd .tag { font-size: 9.5px; padding: 3px 6px; }
+  .sd .tag--ship { padding: 1px 5px; }
+  @media (max-height: 760px) { .sd__sits { display: none !important; } }
+  @media (max-width: 900px) {
+    .rail { top: auto; bottom: 0; left: 0; right: 0; transform: none; width: auto; padding: 0; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+    .rail::before, .rail::after { display: none; }
+    .rail button { grid-template-columns: 1fr; padding: 8px 0; text-align: center; border: 1px solid var(--line); border-radius: 2px; }
+    .rail button b { display: none; }
+    .rail button[aria-current='true'] { transform: none; border-color: var(--bone); }
+    .sds { left: 0; width: auto; top: 41%; bottom: 46px; align-items: start; }
+    .sd h3 { font-size: 22px; } .sd { gap: 6px; }
+    .sd dl > div { grid-template-columns: 68px 1fr; padding: 5px 0; } .sd dd { font-size: 14px; }
+    .sd__sits { display: none !important; } .sd .tag { display: none; }
+    .sd li { grid-template-columns: 1fr auto; }
+  }
+  @media (prefers-reduced-motion: reduce) { .sd, .rail, .sds, .rail button { transition: none; } }
+
+  /* 08 */
+  .say { flex: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; align-content: center; margin-top: 24px; }
+  .say__card { padding: 22px; display: grid; gap: 14px; justify-items: start; }
+  .say__v { font-size: clamp(34px, 4vw, 54px); line-height: 1; }
+  .say__v small { font-size: 0.42em; color: var(--mute); }
+  .say__n { font-size: 15px; color: var(--mute); }
+  @media (max-width: 900px) { .say { grid-template-columns: 1fr 1fr; gap: 10px; } .say__card { padding: 14px; gap: 9px; } .say__n { display: none; } }
+
+  /* 14 */
+  .cant { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(16px, 4vw, 56px); align-content: center; margin-top: 24px; }
+  .cant article { border-top: 1.5px solid var(--fg); padding-top: 18px; display: grid; gap: 10px; justify-items: start; }
+  .cant svg { width: 44px; height: 44px; }
+  .cant h3 { font-size: clamp(24px, 2.6vw, 36px); font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; }
+  .cant p { color: var(--dim); font-size: 16px; max-width: 30ch; }
+  @media (max-width: 720px) { .cant { grid-template-columns: 1fr; gap: 14px; } .cant svg { display: none; } .cant article { padding-top: 10px; gap: 6px; } .cant p { font-size: 15px; } }
+
+  /* 15 */
+  .end { margin: auto 0; display: grid; justify-items: center; text-align: center; }
+  .end .h { max-width: 14ch; }
+  .end__cta { margin-top: 34px; }
+  .foot { display: flex; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; position: relative; z-index: 2; padding-left: 0; }
+  .h--two span { color: #56565b; transition: color 0.35s ease; }
+  .h--two span:global(.lit) { color: var(--bone); }
+</style>

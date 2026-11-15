@@ -1,0 +1,17 @@
+{
+  "name": "baseline",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build && node scripts/check-copy.mjs",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@fontsource-variable/geist-mono": "^5.3.0",
+    "@fontsource/barlow": "^5.3.0",
+    "animejs": "^4.5.0",
+    "astro": "^7.4.12"
+  }
+}

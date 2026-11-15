@@ -1,0 +1,33 @@
+---
+import '@fontsource/barlow/400.css';
+import '@fontsource/barlow/500.css';
+import '@fontsource/barlow/600.css';
+import '@fontsource-variable/geist-mono';
+import '../styles/global.css';
+interface Props { title?: string; description?: string }
+const { title, description = 'A two-minute daily self-check that learns each astronaut\'s normal and flags slow drift weeks before a medical limit.' } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0b0c" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title ? `${title} · Baseline` : 'Baseline · Health self-check for long missions'}</title>
+  </head>
+  <body>
+    <a class="sr" href="#main">Skip to content</a>
+    <header class="nav">
+      <a class="nav__mark" href="/" aria-label="Baseline, home">
+        <svg viewBox="0 0 26 12" aria-hidden="true"><path d="M1 5h7l4 5 4-3h9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        Baseline
+      </a>
+      <nav class="nav__links" aria-label="Main">
+        <a href="/app">Open the tool</a>
+      </nav>
+    </header>
+    <main id="main"><slot /></main>
+  </body>
+</html>

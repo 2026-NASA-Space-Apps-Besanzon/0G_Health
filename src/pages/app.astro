@@ -1,0 +1,189 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="The tool" description="Baseline by team 0G Health: one simulated crew member's 180 days to Mars, and what the self-check tells them.">
+  <div class="app">
+    <header class="app__head">
+      <div>
+        <p class="label">The tool · one simulated crew member · 180 days to Mars</p>
+        <h1>Follow one mission. See what the tool says, and when.</h1>
+      </div>
+      <div class="app__ctl">
+        <span class="play__note label" aria-live="polite"></span>
+        <button class="chip play" data-state="play" aria-label="Pause the mission"><span class="play__ic" aria-hidden="true"></span><span class="play__t">Pause</span><i class="play__hold" aria-hidden="true"></i></button>
+        <label class="sr" for="day">Mission day</label>
+        <input class="sr" id="day" type="range" min="1" max="180" value="1" />
+      </div>
+    </header>
+
+    <section class="trk panel" aria-label="Mission progress. Drag to move through the mission."><svg aria-hidden="true"></svg></section>
+
+    <div class="mid">
+      <section class="watch panel" aria-label="What the watch shows">
+        <p class="label">On the wrist · screen and vibration only</p>
+        <svg viewBox="0 0 320 320" aria-hidden="true"></svg>
+        <button class="chip ack" hidden>Press the crown · acknowledge</button>
+        <div class="hap">
+          <span class="hap__k" data-k="drift"><span class="hap__i"><i></i><i></i></span><span><b>Two taps</b> · something is drifting</span></span>
+          <span class="hap__k" data-k="limit"><span class="hap__i"><i class="l"></i><i class="l"></i><i class="l"></i></span><span><b>Three long buzzes</b> · a limit, repeats until acknowledged</span></span>
+          <span class="hap__k hap__c"><span class="hap__i"><i class="c"></i></span><span>Each colour is one vital · <em>green ring</em> your normal · <em class="r">red line</em> the limit</span></span>
+        </div>
+        <button class="chip hap__phone" hidden aria-pressed="false">Also vibrate this phone</button>
+      </section>
+
+      <section class="now panel" aria-live="polite">
+        <p class="label">After this morning's two-minute check</p>
+        <h2 class="now__say"></h2>
+        <p class="label now__h"></p>
+        <ol class="now__do"></ol>
+        <div class="link">
+          <p class="label">Link to Earth · one way <b class="link__one mono"></b></p>
+          <svg viewBox="0 0 300 56" aria-hidden="true"></svg>
+          <p class="link__t"></p>
+          <p class="label link__p">Earth gets the summary. Raw brainwaves and voice stay on board.</p>
+        </div>
+      </section>
+
+      <section class="log panel" aria-label="Notifications so far">
+        <p class="label">Watch notifications so far</p>
+        <div class="evs"></div>
+      </section>
+    </div>
+
+    <section class="rd panel" aria-label="All readings">
+      <div class="rd__head">
+        <p class="label">Every reading today · pick one to see its history</p>
+        <div class="seg" role="group" aria-label="Show readings as">
+          <button class="chip" data-view="tiles" aria-pressed="true">Tiles</button>
+          <button class="chip" data-view="table" aria-pressed="false">Table</button>
+        </div>
+      </div>
+      <div class="tiles"></div>
+      <div class="tbl" hidden>
+        <div class="tbl__wrap">
+          <table>
+            <thead><tr><th scope="col">Reading</th><th scope="col">Today</th><th scope="col">Yesterday</th><th scope="col">7 days ago</th><th scope="col">Your normal</th><th scope="col">Δ 1 day</th><th scope="col">Δ from normal</th><th scope="col">Source</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="label tbl__key"><span class="up">▲▼ Red: toward the limit</span> · <span class="dn">green: away from it</span> · <span>grey: within day-to-day noise</span> · Δ from normal coloured by today's status</p>
+      </div>
+      <div class="d">
+        <div class="d__text">
+          <h2 class="d__name"></h2>
+          <p class="d__st label"></p>
+          <p class="d__what"></p>
+          <p class="d__why"></p>
+          <p class="d__src label"></p>
+        </div>
+        <div class="chart"><svg aria-hidden="true"></svg></div>
+      </div>
+    </section>
+    <p class="label app__foot">Baseline by team 0G Health · prototype · all data simulated · not a medical device</p>
+  </div>
+  <script>import '../story/app';</script>
+</Base>
+
+<style is:global>
+  .nav { position: absolute; }
+  .app { padding: 84px var(--gutter) 28px; display: grid; gap: 16px; max-width: 1500px; margin: 0 auto; }
+  .app .panel { padding: 18px 20px; }
+  .app__head { display: flex; justify-content: space-between; align-items: end; gap: 20px; flex-wrap: wrap; }
+  .app__head h1 { font-size: clamp(26px, 3vw, 44px); font-weight: 600; line-height: 1.05; letter-spacing: -0.02em; margin-top: 8px; max-width: 24ch; text-wrap: balance; }
+  .app__ctl { display: flex; align-items: center; gap: 14px; }
+  .play { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-width: 104px; color: var(--bone); border-color: var(--bone); }
+  .play__ic { width: 10px; height: 10px; flex: none; background: currentColor; clip-path: polygon(0 0, 35% 0, 35% 100%, 0 100%, 0 0, 65% 0, 100% 0, 100% 100%, 65% 100%, 65% 0); }
+  .play[data-state='pause'] .play__ic { clip-path: polygon(0 0, 100% 50%, 0 100%); }
+  .play[data-state='pause'], .play[data-state='pause']:hover { background: var(--bone); color: var(--ink); }
+  .play__hold { position: absolute; left: 0; bottom: 0; height: 2px; width: calc(var(--hold, 0) * 100%); background: var(--you); }
+  .play__note { min-width: 0; text-align: right; }
+  .trk { position: relative; height: 132px; padding: 0 !important; cursor: ew-resize; touch-action: none; }
+  .trk svg, .chart svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .mid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 0.9fr); gap: 16px; align-items: stretch; }
+  .watch { display: grid; justify-items: center; align-content: start; gap: 6px; }
+  .watch .label { justify-self: start; }
+  .watch svg { width: min(100%, 320px); height: auto; cursor: default; margin: 10px 0 6px; }
+  .watch, .now { transition: border-color 0.3s, box-shadow 0.3s; }
+  .watch[data-st='limit'], .now[data-st='limit'] { border-color: var(--limit); box-shadow: 0 0 0 1px var(--limit), 0 0 48px -12px rgba(255, 77, 77, 0.55); }
+  .watch[data-st='limit'] svg { cursor: pointer; }
+  .watch[data-hap='limit'] { animation: crit 0.5s ease-in-out infinite alternate; }
+  @keyframes crit { to { box-shadow: 0 0 0 1px var(--limit), 0 0 70px -6px rgba(255, 77, 77, 0.8); } }
+  .ack { justify-self: center; color: var(--ink); background: var(--limit); border-color: var(--limit); font-weight: 600; }
+  .ack:hover { color: var(--ink); border-color: var(--bone); }
+  .hap { justify-self: stretch; display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 10px; margin-top: 4px; }
+  .hap__k { display: grid; grid-template-columns: 62px 1fr; align-items: baseline; font-size: 13px; color: var(--mute); transition: color 0.15s; }
+  .hap__i { display: flex; gap: 4px; align-self: center; } .hap__k b { font-weight: 500; color: var(--bone); }
+  .hap__k i { width: 6px; height: 6px; border-radius: 3px; background: var(--drift); flex: none; }
+  .hap__k i.l { width: 16px; background: var(--limit); }
+  .hap__k i.c { width: 22px; background: linear-gradient(90deg, #a08cff, #ff6fae, #5a9bff, #4cd4f0, #ffa27a, #dce35c); }
+  .hap__k em { font-style: normal; color: var(--you); } .hap__k em.r { color: var(--limit); }
+  .hap__k.on { color: var(--bone); }
+  .hap__k.on i { animation: hz 0.05s linear infinite alternate; }
+  @keyframes hz { to { transform: translateX(1.5px); } }
+  .hap__phone { justify-self: start; }
+  .prio { font-style: normal; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); background: var(--limit); padding: 2px 6px; border-radius: 2px; margin-left: 6px; }
+  .now { display: flex; flex-direction: column; gap: 12px; }
+  .now__say { font-size: clamp(26px, 2.6vw, 40px); font-weight: 600; line-height: 1.06; letter-spacing: -0.02em; text-wrap: balance; min-height: 2.15em; }
+  .now__say[data-st='ok'] { color: var(--you); } .now__say[data-st='drift'] { color: var(--drift); } .now__say[data-st='limit'] { color: var(--limit); }
+  .now__do { list-style: none; padding: 0; display: grid; }
+  .now__do li { display: grid; grid-template-columns: 52px 1fr auto; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 15px; align-items: baseline; }
+  .now__do li:not(:first-child) span:nth-child(2) { color: var(--mute); }
+  .now__do .mono { color: var(--mute); font-size: 13px; }
+  .link { margin-top: auto; border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 8px; }
+  .link__one { color: var(--bone); font-weight: 400; margin-left: 6px; }
+  .link svg { width: 100%; height: auto; max-height: 64px; }
+  .link__t { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 14px; color: var(--mute); }
+  .link__t b { color: var(--bone); font-weight: 400; }
+  .log { display: flex; flex-direction: column; gap: 10px; min-height: 300px; }
+  .evs { display: grid; gap: 8px; align-content: start; }
+  .evs__none { color: var(--mute); font-size: 15px; }
+  .ev { display: grid; gap: 3px; text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-left-width: 3px; border-radius: 4px; }
+  .ev b { font-weight: 500; font-size: 16px; line-height: 1.25; } .ev small { color: var(--mute); font-weight: 400; }
+  .ev__t { font-family: var(--mono); font-size: 11px; color: var(--mute); }
+  .ev--limit { border-left-color: var(--limit); border-left-width: 5px; } .ev--limit b { color: var(--limit); } .ev--alert { border-left-color: var(--drift); } .ev--clear { border-left-color: var(--you); } .ev--info { border-left-color: var(--bone); }
+  .ev:hover { border-color: var(--mute); }
+  .ev--new { animation: evin 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
+  @keyframes evin { from { opacity: 0; transform: translateY(-14px) scale(0.97); } }
+  .rd { display: grid; gap: 14px; }
+  .rd__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .seg { display: flex; padding: 3px; gap: 3px; border: 1px solid var(--line); border-radius: 4px; background: var(--ink); }
+  .seg .chip { min-width: 72px; text-align: center; border: 0; background: none; padding: 7px 12px; }
+  .seg .chip[aria-pressed='true'] { background: var(--bone); color: var(--ink); border-radius: 2px; }
+  .tbl { display: grid; gap: 10px; } .tbl[hidden], .tiles[hidden] { display: none; }
+  .tbl__wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; }
+  .tbl table { width: 100%; border-collapse: collapse; min-width: 820px; font-size: 15px; }
+  .tbl th { font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mute); text-align: right; padding: 12px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .tbl th:first-child, .tbl td:first-child { text-align: left; }
+  .tbl td { padding: 10px 14px; border-bottom: 1px solid #222224; text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--mute); }
+  .tbl tr:last-child td { border-bottom: 0; }
+  .tbl td:first-child { font-family: var(--sans); color: var(--bone); }
+  .tbl td.td-now { color: var(--bone); } .tbl td.td-now b { font-weight: 500; font-size: 16px; } .tbl small { font-size: 0.8em; color: var(--mute); margin-left: 3px; }
+  .tbl td.td-src { font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .tbl .nm { display: flex; align-items: center; gap: 10px; } .tbl .nm .hue { margin-left: 2px; }
+  .tbl tbody tr { cursor: pointer; transition: background 0.15s; } .tbl tbody tr:hover { background: #1c1c1e; }
+  .tbl tbody tr[aria-selected='true'] { background: #222225; box-shadow: inset 3px 0 0 var(--bone); }
+  .tbl tbody tr[data-st='limit'] td.td-now, .tbl tbody tr[data-st='limit'] td:first-child { color: var(--limit); }
+  .tbl td { transition: color 0.6s ease; }
+  .tbl .up, .tbl td.d-up { color: var(--limit); } .tbl .dn, .tbl td.d-dn { color: var(--you); } .tbl td.d-flat { color: var(--mute); }
+  .tbl td.d-st-drift { color: var(--drift); } .tbl td.d-st-limit { color: var(--limit); } .tbl td.d-st-ok { color: var(--bone); }
+  .tbl__key { font-size: 10px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 8px; }
+  .tile { display: grid; gap: 4px; text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-radius: 4px; }
+  .tile__top { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--mute); }
+  .tile b { font-weight: 400; font-size: 22px; } .tile small { font-size: 0.55em; color: var(--mute); }
+  .tile .label { font-size: 9.5px; }
+  .tile:hover { border-color: var(--mute); }
+  .tile[aria-pressed='true'] { border-color: var(--bone); background: #1f1f21; }
+  .tile[data-st='limit'] { border-color: var(--limit); box-shadow: inset 0 0 0 1px var(--limit); } .tile[data-st='limit'] b { color: var(--limit); }
+  .hue { width: 14px; height: 3px; border-radius: 2px; background: var(--h); margin-left: auto; flex: none; } .tile[aria-pressed='true'] .tile__top { color: var(--bone); }
+  .d { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 24px; border-top: 1px solid var(--line); padding-top: 16px; }
+  .d__text { display: grid; gap: 8px; align-content: start; }
+  .d__name { font-size: 24px; font-weight: 600; line-height: 1.1; }
+  .d__st { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .d__what { font-size: 16px; } .d__why { font-size: 15px; color: var(--mute); }
+  .chart { position: relative; height: 210px; }
+  .app__foot { text-align: center; padding-top: 6px; }
+  @media (max-width: 1020px) { .mid { grid-template-columns: 1fr 1fr; } .log { grid-column: 1 / -1; min-height: 0; } }
+  @media (max-width: 700px) { .app { padding-top: 72px; } .mid { grid-template-columns: 1fr; } .d { grid-template-columns: 1fr; } .trk { height: 118px; } .now__say { min-height: 0; } }
+  @media (prefers-reduced-motion: reduce) { .ev--new, .watch[data-hap='limit'], .hap__k.on i { animation: none; } }
+</style>
