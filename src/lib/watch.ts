@@ -1,19 +1,26 @@
 // The wrist display, shared by the story page and the tool. Six vitals, each with its own colour:
 // colour says which vital, the green ring is your normal, the red dashed line is the medical limit.
 // Haptics: drifting = two short taps; limit = three long buzzes, repeating until the crown is pressed.
+// The lower side button calls the crew medical officer on board: hold it to call, press it again to hang up.
 import { Spring, SPRING, reduced, clamp, f, path, line, circle, text } from './motion';
 import { LEARN, type Status, type Reading, type Analysis } from './sim';
 
 export const WATCH = [
-  { id: 'sleep', k: 'Sleep', c: '#a08cff' }, { id: 'pulse', k: 'Pulse', c: '#ff6fae' }, { id: 'spo2', k: 'Oxygen', c: '#5a9bff' },
+  { id: 'sleep', k: 'Sleep', c: '#a08cff' }, { id: 'pulse', k: 'Pulse', c: '#ff6fae' }, { id: 'spo2', k: 'SpO2', c: '#5a9bff' },
   { id: 'hrv', k: 'HRV', c: '#4cd4f0' }, { id: 'temp', k: 'Temp', c: '#ffa27a' }, { id: 'motion', k: 'Motion', c: '#dce35c' },
 ];
 export const HUE: Record<string, string> = Object.fromEntries(WATCH.map((w) => [w.id, w.c]));
 export const UNIT: Record<string, string> = { sleep: 'h', pulse: 'bpm', spo2: '%', hrv: 'ms', temp: '°C', motion: '/10' };
-export const SHORT: Record<string, string> = { hrv: 'Heart rhythm', motion: 'Motion sickness', temp: 'Skin temp', spo2: 'Oxygen', pulse: 'Pulse', bone: 'Exercise', load: 'Workload' };
+export const SHORT: Record<string, string> = { hrv: 'Heart rhythm', motion: 'Motion sickness', temp: 'Skin temp', spo2: 'SpO2', pulse: 'Pulse', bone: 'Exercise', load: 'Workload', muscle: 'Muscle', density: 'Bone' };
 
 export type Src = Record<string, { r: Reading; a: Analysis; vals: number[] }>;
 export type HapKind = 'drift' | 'limit';
+/** The call to the crew medical officer. count: seconds left before the watch calls by itself. hold: 0..1 while the button is held. */
+export interface CallView {
+  phase: '' | 'ring' | 'on' | 'end'; count: number; hold: number;
+  /** seconds on the line */ secs?: number; /** the watch called because a limit went unanswered */ auto?: boolean;
+  /** drawing only: no clickable lower button */ still?: boolean;
+}
 
 /** Size of the drawing in its own units: centre (160, 160), case radius 136, 320 × 320. */
 export const WATCH_BOX = { cx: 160, cy: 160, w: 320, h: 320 };
@@ -70,7 +77,7 @@ export class Watch {
    * Draw the face in its own units (see WATCH_BOX).
    * msg: the one status line. st: overall status. bezelDeg: where the bezel should turn to.
    */
-  draw(o: { day: number; dt: number; now: number; msg: string; st: Status; bezelDeg: number; time?: string; /** paused: no vibration */ still?: boolean }) {
+  draw(o: { day: number; dt: number; now: number; msg: string; st: Status; bezelDeg: number; time?: string; /** paused: no vibration */ still?: boolean; call?: CallView }) {
     const { day, dt, now } = o, cx = 160, cy = 160, R = 132, learning = day <= LEARN, h = this.hap;
     this.bezel.set(o.bezelDeg); this.bezel.step(dt); this.ripple.t += dt;
     if (h.kind && h.day > 0 && h.day !== day) h.kind = ''; // day 0: the buzz is not tied to one day
@@ -92,8 +99,19 @@ export class Watch {
     s += `<g transform="translate(${f(jx)} ${f(jy)})">`;
     // case and crown
     s += `<rect x="${cx + R + 3}" y="${cy - 11}" width="8" height="22" rx="2" class="${pending ? 'f-limit' : 's-dim'}" ${pending ? `opacity="${f(0.5 + pulse * 0.5)}"` : ''}/>`;
+    // seconds left before the watch calls by itself: an arc drains around the crown
+    const cl = o.call, live = !!cl && (cl.phase === 'ring' || cl.phase === 'on');
+    if (pending && cl && cl.count > 0) s += path(arcD(cx, cy, R + 10, -0.2, -0.2 + 0.4 * Math.min(1, cl.count / 10)), 's-limit', 'stroke-width="2.5"');
+    // the lower button: calls the crew medical officer
+    const hb = cl ? cl.hold : 0;
+    s += `<rect x="${cx + R + 1}" y="${cy + 30}" width="8" height="18" rx="2" transform="rotate(14 ${cx + R + 5} ${cy + 39})" class="${live ? 'f-you' : 's-dim'}"/>`;
+    if (hb > 0) s += `<rect x="${cx + R + 1}" y="${f(cy + 48 - 18 * hb)}" width="8" height="${f(18 * hb)}" rx="2" transform="rotate(14 ${cx + R + 5} ${cy + 39})" class="f-you"/>`;
+    const hit = !cl || cl.still ? '' : `<rect data-k="call" x="${cx + R - 6}" y="${cy + 22}" width="32" height="36" fill="transparent" style="cursor:pointer"/>`;
     s += `<circle cx="${cx}" cy="${cy}" r="${R + 4}" fill="var(--ink-2)" stroke="${crit ? 'var(--limit)' : 'var(--line)'}" stroke-width="${crit ? f(1.5 + pulse * 1.5) : 1.5}"/>`;
     s += `<circle cx="${cx}" cy="${cy}" r="${R - 16}" fill="#0f0f10"/>`;
+
+    // during a call the whole face is the call screen
+    if (cl && (live || cl.phase === 'end')) return s + this.callScreen(cl, now, pulse) + hit + '</g>';
 
     // colour ring: one segment per vital, on the rim, centred on its axis
     const RS = R - 6;
@@ -126,13 +144,45 @@ export class Watch {
       s += text(lx, ly, w.k, 't-label', `text-anchor="${anc}" style="font-size:8px;fill:${ws === 'limit' ? 'var(--limit)' : w.c}"`);
     });
 
-    // one status line at the bottom; a red pill at the limit
+    // one status line at the bottom; a red pill at the limit, a green one during a call
     const inNormal = WATCH.filter((w) => this.st(w.id, day) === 'ok').length;
     const msg = o.st === 'ok' ? `${inNormal}/${WATCH.length} in your normal` : o.msg, fy = cy + 91;
+    if (cl && hb > 0) {
+      const t = 'Hold to call doctor', bw = t.length * 6.2 + 22;
+      s += `<rect x="${f(cx - bw / 2)}" y="${fy - 12}" width="${f(bw)}" height="17" rx="8.5" class="f-bg" stroke="var(--you)"/>` + text(cx, fy, t, 't-label t-you', 'text-anchor="middle" style="font-size:8.5px;font-weight:600"');
+      return s + hit + '</g>';
+    }
     if (crit) { const bw = msg.length * 6.2 + 22; s += `<rect x="${f(cx - bw / 2)}" y="${fy - 12}" width="${f(bw)}" height="17" rx="8.5" class="f-limit"/>` + text(cx, fy, msg, 't-label', 'text-anchor="middle" style="font-size:8.5px;fill:var(--ink);font-weight:600"'); }
     else s += text(cx, fy, msg, `t-label ${o.st === 'ok' ? 't-you' : o.st === 'drift' ? 't-drift' : 't-fg'}`, 'text-anchor="middle" style="font-size:8.5px"');
     if (crit) s += text(cx, fy + 13, pending ? 'Press crown' : h.ack ? 'Acknowledged' : 'Tell your crew', 't-label t-limit', `text-anchor="middle" style="font-size:7.5px" ${pending ? `opacity="${f(0.55 + pulse * 0.45)}"` : ''}`);
-    s += '</g>';
+    return s + hit + '</g>';
+  }
+
+  /** The call to the crew medical officer, filling the face: who, how long, and how to hang up. */
+  private callScreen(cl: CallView, now: number, pulse: number) {
+    const cx = 160, cy = 160, R = 132, ring = cl.phase === 'ring', on = cl.phase === 'on', end = cl.phase === 'end', ay = cy - 18;
+    const sans = (px: number) => `text-anchor="middle" style="font-family:var(--sans);letter-spacing:0;text-transform:none;font-size:${px}px"`;
+    let s = `<circle cx="${cx}" cy="${cy}" r="${R}" fill="#0b0d0c"/>`;
+    // rim: breathes while ringing, steady on the line, grey when it ends
+    s += `<circle cx="${cx}" cy="${cy}" r="${R - 6}" fill="none" stroke="${end ? 'var(--line)' : 'var(--you)'}" stroke-width="${ring ? f(3 + pulse * 3) : 3}" opacity="${ring ? f(0.5 + pulse * 0.5) : 0.9}"/>`;
+    // ringing: waves leave the avatar
+    if (ring && !reduced) for (let k = 0; k < 3; k++) { const u = (now * 0.7 + k / 3) % 1; s += circle(cx, ay, 30 + u * 44, 's-you', `stroke-width="1.5" opacity="${f((1 - u) * 0.7)}"`); }
+    // the medical officer: a round badge with a cross
+    s += `<circle cx="${cx}" cy="${ay}" r="30" fill="${end ? 'var(--ink-2)' : 'rgba(94,240,192,0.12)'}" stroke="${end ? 'var(--line)' : 'var(--you)'}" stroke-width="2"/>`;
+    s += `<path d="M${cx - 4} ${ay - 12}h8v8h8v8h-8v8h-8v-8h-8v-8h8z" class="${end ? 'f-dim' : 'f-you'}"/>`;
+    const top = cl.auto ? 'No answer to a limit' : 'You called';
+    s += text(cx, cy - 72, top, `t-label ${cl.auto ? 't-limit' : ''}`, 'text-anchor="middle" style="font-size:8px"');
+    s += text(cx, cy + 34, 'Medical officer', 't-fg', sans(17));
+    const secs = Math.max(0, Math.floor(cl.secs ?? 0));
+    const st = ring ? 'Calling…' : on ? `On board · ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}` : 'Call ended';
+    s += text(cx, cy + 52, st, `t-label ${end ? '' : 't-you'}`, 'text-anchor="middle" style="font-size:9px"');
+    // hang up: the same lower button, marked on the rim right next to it
+    if (!end) {
+      const a = Math.atan2(39, R + 5), mx = cx + Math.cos(a) * (R - 20), my = cy + Math.sin(a) * (R - 20);
+      s += `<path d="M${f(mx - 9)} ${f(my)}h7" class="s-limit" stroke-width="2"/>`;
+      const bw = 116, by = cy + 68;
+      s += `<rect x="${cx - bw / 2}" y="${by}" width="${bw}" height="19" rx="9.5" class="f-limit"/>` + text(cx, by + 13, 'Hang up · lower button', 't-label', 'text-anchor="middle" style="font-size:7.5px;fill:var(--ink);font-weight:600"');
+    } else s += text(cx, cy + 82, 'Logged with your notes', 't-label', 'text-anchor="middle" style="font-size:7.5px"');
     return s;
   }
 }

@@ -29,7 +29,7 @@ export function c12(sec: HTMLElement) {
       let s = text(0, 10, `Spacewalk elapsed  ${pad(Math.floor(mins / 60))}:${pad(mins % 60)}`, 't-label t-fg') + text(c.w, 10, 'Simulated', 't-label', 'text-anchor="end"');
       s += g(0, 'Heat', 'Skin temp · sensed', heat, 33.5, 37.5, 34.2, 36.0, heat.toFixed(1) + '°', hot ? 'drift' : 'ok');
       s += g(1, 'Workload', 'fNIRS · estimated · future', load, 0, 1, 0.25, 0.75, load.toFixed(2), 'ok');
-      s += g(2, 'Oxygen', 'PPG · sensed', ox, 90, 100, 95, 99, ox.toFixed(0) + '%', 'ok');
+      s += g(2, 'Oxygen', 'SpO2 · PPG · sensed', ox, 90, 100, 95, 99, ox.toFixed(0) + '%', 'ok');
       // who hears first: the chain lives beside the title; the scroll walks the alert along it.
       // u counts stops: 0 You, 1 Partner, 2 Habitat, 3 Earth. A dot lights the moment the line reaches it.
       const prog = seg(t, 0.42, 0.96), u = !hot ? 0 : prog < 0.5 ? prog / 0.25 : 2 + seg(prog, 0.5, 0.9);

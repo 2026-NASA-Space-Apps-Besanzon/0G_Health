@@ -16,6 +16,10 @@ export interface Reading {
   /** half-width of the model's confidence band, for ML estimates */ conf?: number;
   what: string; why: string;
   action: { you: string; crew: string; ground: string };
+  /** Estimated by a model that expects a slow decline: alert levels instead of a learned band. */
+  model?: { warn: number; trend: number };
+  /** Wording for the notification when this reading drifts or hits its limit. */
+  say?: { drift: string; limit: string };
 }
 
 export const READINGS: Reading[] = [
@@ -39,8 +43,8 @@ export const READINGS: Reading[] = [
     what: 'How much the gap between heartbeats varies. Higher means calmer and better recovered.',
     why: 'It falls under stress, poor sleep and illness, often before you notice any of them.',
     action: { you: 'Five minutes of slow breathing after the check. Protect tonight\'s sleep.', crew: 'Mention it at the private medical conference if it keeps falling.', ground: 'Shared as a weekly trend only.' } },
-  { id: 'spo2', label: 'Blood oxygen', unit: '%', dec: 0, sensor: 'ppg', source: 'PPG', tag: 'sensed', region: 'lungs', mean: 97.4, sd: 0.5, limit: { dir: 'lo', v: 92 },
-    what: 'How much oxygen your blood is carrying.',
+  { id: 'spo2', label: 'Blood oxygen (SpO2)', unit: '%', dec: 0, sensor: 'ppg', source: 'PPG', tag: 'sensed', region: 'lungs', mean: 97.4, sd: 0.5, limit: { dir: 'lo', v: 93 },
+    what: 'How much oxygen your blood is carrying, read by light through the skin (PPG). 95 % or more is normal.',
     why: 'It should be steady. A drop during a spacewalk or after a cabin air problem needs action now, not later.',
     action: { you: 'Stop, breathe slowly, check your suit or cabin air readout.', crew: 'Alert goes to your crewmates immediately.', ground: 'Earth hears after the crew, because of the delay.' } },
   { id: 'temp', label: 'Skin temperature', unit: '°C', dec: 1, sensor: 'temp', source: 'Thermistor', tag: 'sensed', region: 'skin', mean: 34.6, sd: 0.18, limit: { dir: 'hi', v: 37.0 },
@@ -59,6 +63,16 @@ export const READINGS: Reading[] = [
     what: 'Minutes of resistance and impact exercise you logged today.',
     why: 'Without gravity, bone and muscle are lost month after month. The cap cannot sense this. Exercise is the countermeasure, so it is what we track.',
     action: { you: 'Make up the missed session within 48 hours.', crew: 'Swap exercise slots with a crewmate if the plan is full.', ground: 'Bone density itself is scanned before and after the mission.' } },
+  { id: 'muscle', label: 'Muscle strength', unit: '%', dec: 1, sensor: null, source: 'Model · workouts, meals, weekly strength test', tag: 'model', region: 'bones', mean: 100, sd: 0.15, limit: { dir: 'lo', v: 80 }, model: { warn: 85, trend: 2 },
+    say: { drift: 'Muscle strength needs a closer look', limit: 'Strength test is far below the model' },
+    what: 'Leg, back, calf and arm strength as a share of your strength before launch. A model works it out each day from your workouts and meals; a weekly strength test checks it.',
+    why: 'Muscle is lost fast without gravity, legs and calves first. The cap cannot sense it, so we estimate it, and the weekly test catches losses the model cannot see, such as an injury.',
+    action: { you: 'Repeat the strength test tomorrow. Do not skip a resistance session.', crew: 'The crew medical officer examines you today.', ground: 'Test results go to the flight surgeon with the next downlink.' } },
+  { id: 'density', label: 'Bone density', unit: '%', dec: 1, sensor: null, source: 'Model · workouts and meals', tag: 'model', region: 'bones', mean: 100, sd: 0.02, limit: { dir: 'lo', v: 95 }, model: { warn: 97, trend: 0.8 },
+    say: { drift: 'Bone density is falling faster than expected', limit: 'Bone density is below its limit' },
+    what: 'Hip and spine bone density as a share of the value before launch. Estimated each day; it cannot be measured in flight.',
+    why: 'Bone is lost at 1 to 1.5 % a month in weightlessness. Loading exercise slows it and poor meals speed it up, so the model follows both.',
+    action: { you: 'Add a loading session this week and eat the calcium and vitamin D portion of your menu.', crew: 'The crew medical officer reviews your exercise plan.', ground: 'Bone is scanned after landing to check the estimate.' } },
   { id: 'vision', label: 'Eye chart', unit: 'lines', dec: 0, sensor: null, source: 'Weekly eye chart', tag: 'you', region: 'eyes', mean: 10, sd: 0.25, limit: { dir: 'lo', v: 8 },
     what: 'The smallest line you can read on the on-screen chart, each eye.',
     why: 'Fluid shifts toward the head in weightlessness and can change vision over months. The cap cannot sense this.',
@@ -80,8 +94,73 @@ const DRIFT: Record<string, number> = { hrv: -0.024, alert: -0.02, voice: 0.03, 
 /** Seed picked so the story scenario flags on day 96 and reaches the limit on day 138. */
 export const SALT: Record<string, number> = { sleep: 475 };
 export const TUNE = { k: 1.15 };
+/** Days the resistance exercise machine is broken in the full mission. */
+export const FAIL = [40, 49];
+/** A hidden injury on day 120 that the model cannot see; the weekly strength test on day 126 finds it. */
+export const HIDDEN_DAY = 120;
+
+/**
+ * Bone and muscle models, ported from Nourchene's C models (0G Health).
+ * Bone:   index(t) = index(t-1) - k + k*prot - k*(1-prot)*(penalty-1), k = 1.25 %/month (NASA 1 to 1.5).
+ * Muscle: four groups, index_g(t) = index_g(t-1) * exp(-k_g * (1 - prot)), weighted into one index.
+ * The weekly strength test reads the real muscle: model + any hidden loss + noise.
+ */
+export type Test = { day: number; v: number };
+/** Muscle groups in Nourchene's model: natural loss per day without exercise, and weight in the global index. */
+export const GROUPS = [
+  { id: 'legs', name: 'Legs', k: 0.0018, w: 0.3, ex: 'squats' },
+  { id: 'back', name: 'Back', k: 0.0014, w: 0.3, ex: 'deadlifts' },
+  { id: 'calves', name: 'Calves', k: 0.0025, w: 0.25, ex: 'calf raises' },
+  { id: 'upper', name: 'Upper body', k: 0.0008, w: 0.15, ex: 'bench press' },
+];
+/** Meals: how much faster bone (penalty) and muscle (deficiency) are lost. Full menu = the nominal NASA menu with supplements. */
+export const FOOD = {
+  full: { name: 'Full menu', bone: 0.093, muscle: 0 },
+  short: { name: 'Short supply', bone: 0.25, muscle: 0.25 },
+  crisis: { name: 'Food crisis', bone: 0.45, muscle: 0.45 },
+} as const;
+export type Food = keyof typeof FOOD;
+export interface BMParams {
+  /** exercise, share of the ISS reference (600 min a week, 3 resistance days) */ dose: number;
+  food: Food;
+  /** resistance machine down, days [from, to] */ fail: [number, number] | null;
+  /** food supply crisis, days [from, to] */ crisis: [number, number] | null;
+  /** an injury on this day that the model cannot see */ hidden: number | null;
+}
+export const BM_MISSION: BMParams = { dose: 1, food: 'full', fail: [FAIL[0], FAIL[1]], crisis: null, hidden: HIDDEN_DAY };
+export const BM_NOMINAL: BMParams = { dose: 1, food: 'full', fail: null, crisis: null, hidden: null };
+
+/** Run the bone and muscle models day by day. The weekly strength test reads the real muscle: model + any hidden loss + noise. */
+export function bmSim(p: BMParams) {
+  const rnd = mulberry(0x0b0e5), kB = 1.25 / 30;
+  const g = GROUPS.map(() => 100), groups: number[][] = GROUPS.map(() => []), muscle: number[] = [], density: number[] = [], tests: Test[] = [];
+  let b = 100;
+  const inside = (d: number, w: [number, number] | null) => !!w && d >= w[0] && d <= w[1];
+  for (let d = 1; d <= DAYS; d++) {
+    const broken = inside(d, p.fail), food = FOOD[inside(d, p.crisis) ? 'crisis' : p.food];
+    // her bone dose scores time, days and load: the nominal log scores 0.947 of the target
+    const protB = 0.8 * (broken ? 0.5 * Math.min(1, p.dose) : Math.min(1, 0.947 * p.dose)), protM = 0.7 * Math.min(1, p.dose) * (broken ? 0.2 : 1);
+    b = b - kB + kB * protB - kB * (1 - protB) * food.bone;
+    GROUPS.forEach((gr, i) => { g[i] *= Math.exp(-gr.k * (1 - protM) * (1 + food.muscle)); groups[i].push(g[i]); });
+    const m = g.reduce((a, v, i) => a + v * GROUPS[i].w, 0);
+    density.push(b); muscle.push(m);
+    if (d % 7 === 0) {
+      // after the finding a week later the crew medical officer starts rehab and the gap closes
+      const H = p.hidden, hidden = H === null || d < H ? 0 : d <= H + 6 ? -6 : -6 * Math.exp(-(d - H - 6) / 14);
+      tests.push({ day: d, v: m + hidden + gauss(rnd) * 0.6 });
+    }
+  }
+  return { muscle, density, groups, tests };
+}
+
+const cache: Partial<Record<Scenario, ReturnType<typeof bmSim>>> = {};
+export function model(sc: Scenario) {
+  return (cache[sc] ??= bmSim(sc === 'mission' ? BM_MISSION : BM_NOMINAL));
+}
+
 /** Daily values, index 0 = mission day 1. */
 export function series(id: string, sc: Scenario): number[] {
+  if (id === 'muscle' || id === 'density') return model(sc)[id];
   const r = reading(id), rnd = mulberry(hash(id) ^ (SALT[id] ?? 0x51ed)), out: number[] = [];
   for (let d = 1; d <= DAYS; d++) {
     let v = r.mean + gauss(rnd) * r.sd;
@@ -95,6 +174,8 @@ export function series(id: string, sc: Scenario): number[] {
       const k = [1, 0.85, 0.55, 0.22, 0.06][d - 1] ?? 0;
       if (id === 'motion') v += 6.8 * k; if (id === 'pulse') v += 9 * k; if (id === 'alert') v -= 12 * k; if (id === 'hrv') v -= 14 * k;
     }
+    // the resistance exercise machine breaks: only light sessions are possible for ten days
+    if (full && id === 'bone' && d >= FAIL[0] && d <= FAIL[1]) v -= 30;
     if ((sc === 'eva' || full) && d === EVA_DAY) {
       // in the full mission the suit's cooling struggles: skin temperature crosses its limit
       if (id === 'temp') v += full ? 2.7 : 1.5; if (id === 'load') v += 0.3; if (id === 'spo2') v -= 2.6; if (id === 'pulse') v += 16;
@@ -109,11 +190,13 @@ export interface Analysis {
   /** first day the 7-day trend has been outside the band 5 days running */ flagDay: number | null;
   /** first day the trend crosses the limit */ limitDay: number | null;
   status: (day: number) => Status; daysOut: (day: number) => number;
+  /** one line on why today's status is what it is (model readings only) */ why?: (day: number) => string;
 }
 
 /** The whole method: learn a personal band from the first 14 days, then watch a 7-day trend against it. */
 /** unwell: days at the start the crew member reported feeling sick; they do not count toward "normal". */
 export function analyse(vals: number[], r: Reading, unwell = 0): Analysis {
+  if (r.model) return analyseModel(vals, r);
   const base = vals.slice(unwell, LEARN), n = base.length;
   const mean = base.reduce((a, b) => a + b, 0) / n;
   const sd = Math.sqrt(base.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1));
@@ -135,6 +218,30 @@ export function analyse(vals: number[], r: Reading, unwell = 0): Analysis {
     return 'ok';
   };
   return { mean, hw, lo, hi, trend, flagDay, limitDay, status, daysOut: (day) => runs[day - 1] };
+}
+
+/** Model readings: alert levels and the 30-day loss, plus the weekly strength test for muscle. */
+export function analyseModel(vals: number[], r: Reading, given?: Test[]): Analysis {
+  const { warn, trend: T } = r.model!, lim = r.limit.v, tests = given ?? (r.id === 'muscle' ? model('mission').tests : []);
+  const loss = (i: number) => (i >= 30 ? vals[i - 30] - vals[i] : ((100 - vals[i]) * 30) / (i + 1));
+  const gap = (day: number) => { let t: { day: number; v: number } | undefined; for (const x of tests) if (x.day <= day) t = x; return t ? t.v - vals[t.day - 1] : null; };
+  const status = (day: number): Status => {
+    const i = day - 1, v = vals[i], g = gap(day);
+    if (v <= lim || (g !== null && g <= -4)) return 'limit';
+    if (i < LEARN) return 'learn';
+    if (loss(i) > T || v <= warn || (g !== null && g <= -2)) return 'drift';
+    return 'ok';
+  };
+  const runs: number[] = []; let run = 0, flagDay: number | null = null, limitDay: number | null = null;
+  vals.forEach((_, i) => { const s = status(i + 1); run = s === 'drift' || s === 'limit' ? run + 1 : 0; runs.push(run); if (flagDay === null && s === 'drift') flagDay = i + 1; if (limitDay === null && s === 'limit') limitDay = i + 1; });
+  const why = (day: number) => {
+    const i = day - 1, v = vals[i], g = gap(day), s = status(day);
+    if (s === 'limit') return g !== null && g <= -4 ? `Strength test ${Math.abs(g).toFixed(1)} points below the model (limit 4)` : `Below ${lim} % of the value before launch`;
+    if (s === 'learn') return r.id === 'muscle' ? 'Model calibrating on your first strength tests' : 'Model calibrating on your first two weeks';
+    if (s === 'drift') return loss(i) > T ? `Lost ${loss(i).toFixed(1)} points in 30 days, faster than ${T}` : g !== null && g <= -2 ? `Strength test ${Math.abs(g).toFixed(1)} points below the model` : `Below the warning level of ${warn} %`;
+    return `${(100 - v).toFixed(1)} points lost since launch, on the expected path`;
+  };
+  return { mean: 100, hw: (100 - warn) / 2, lo: warn, hi: 100, trend: vals, flagDay, limitDay, status, daysOut: (day) => runs[day - 1], why };
 }
 
 export const fmt = (v: number, r: Reading) => v.toFixed(r.dec);

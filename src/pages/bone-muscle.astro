@@ -1,0 +1,231 @@
+---
+// Bone and muscle loss: Nourchene's models (0G Health), explained and runnable.
+// Her C code: os/totaly/main.c (bone: activity + nutrition + bone index) and
+// muscle/general/totalmusc.c (four muscle groups, weekly strength test, anomaly checks).
+import Base from '../layouts/Base.astro';
+import { GROUPS, reading, bmSim, BM_NOMINAL, DAYS } from '../lib/sim';
+const HRP = 'https://www.nasa.gov/hrp/hazards/';
+const M = reading('muscle'), B = reading('density');
+const pct = (k: number) => (k * 3000).toFixed(1);
+// hero: what 180 days cost even when everything goes to plan
+const R = bmSim(BM_NOMINAL), GC = ['#7fd1ff', '#c3a6ff', '#ff9a7a', '#d7e36a'];
+const HW = 420, HH = 300, X = (d: number) => 8 + ((d - 1) / (DAYS - 1)) * (HW - 120), Y = (v: number) => 14 + ((100.5 - v) / 15) * (HH - 44);
+const line = (a: number[]) => a.map((v, i) => `${i ? 'L' : 'M'}${X(i + 1).toFixed(1)} ${Y(v).toFixed(1)}`).join('');
+const HERO = [
+  { name: 'Bone', c: 'var(--bone)', v: R.density, w: 2.4 },
+  ...GROUPS.map((g, i) => ({ name: g.name, c: GC[i], v: R.groups[i], w: 1.6 })),
+].map((l) => ({ ...l, d: line(l.v), end: l.v[DAYS - 1] }));
+// keep the end labels apart
+const ys = HERO.map((l) => Y(l.end)).sort((a, b) => a - b);
+const placed: number[] = []; for (const y of ys) placed.push(Math.max(y, (placed.at(-1) ?? -99) + 15));
+const labY = (y: number) => placed[ys.indexOf(y)];
+---
+<Base title="Bone and muscle" description="Bone and muscle loss in weightlessness: Nourchene's model for team 0G Health, explained and running in your browser.">
+  <div class="bm">
+    <header class="bm__hero">
+      <p class="label">Bone and muscle · model by Nourchene · team 0G Health</p>
+      <h1 class="h">The loss you cannot&nbsp;feel.</h1>
+      <p class="sub">Without gravity, bones thin and muscles shrink every day, and nothing hurts. No sensor in the headpiece can see it. So Nourchene built a model that follows it from what the crew already logs, workouts and meals, with a strength test once a week to keep the model honest.</p>
+      <p class="bm__jump"><a class="chip" href="#try">Run the model</a><a class="chip" href="#how">How it works</a></p>
+      <figure class="bm__heroviz" aria-label="Even when everything goes to plan, after 180 days bone is at about 98 % and calf strength at about 87 % of launch.">
+        <figcaption class="label">180 days, everything to plan · % of launch</figcaption>
+        <svg viewBox={`0 0 ${HW} ${HH}`} aria-hidden="true">
+          {[100, 95, 90].map((v) => <line x1="8" x2={X(DAYS)} y1={Y(v)} y2={Y(v)} class="s-hair" />)}
+          {HERO.map((l) => <path d={l.d} fill="none" stroke={l.c} stroke-width={l.w} stroke-linecap="round" />)}
+          {HERO.map((l) => <><circle cx={X(DAYS)} cy={Y(l.end)} r="3" fill={l.c} /><text x={X(DAYS) + 10} y={labY(Y(l.end)) + 4} class="t-label" style={`font-size:10px;fill:${l.c}`}>{l.name} {l.end.toFixed(1)}</text></>)}
+          <text x="8" y={HH - 6} class="t-label" style="font-size:9px">Day 1</text><text x={X(DAYS)} y={HH - 6} class="t-label" text-anchor="end" style="font-size:9px">Mars · 180</text>
+        </svg>
+      </figure>
+    </header>
+
+    <section class="bm__facts" aria-label="Key figures">
+      <div class="panel"><b class="mono">1 to 1.5 %</b><span>of bone mass lost each month in weightlessness</span><a class="label" href={HRP} target="_blank" rel="noopener">NASA HRP</a></div>
+      <div class="panel"><b class="mono">{pct(GROUPS[2].k)} %</b><span>calf strength lost a month with no exercise, in the model. Calves go first, the upper body last</span><span class="label">Model value · assumption</span></div>
+      <div class="panel"><b class="mono">600 min</b><span>of exercise a week on the ISS. It slows the loss. It does not stop it</span><span class="label">Scott et al. 2023</span></div>
+      <div class="panel"><b class="mono">0 sensors</b><span>can measure bone or muscle from the head. So we estimate it, and we label it that way</span><span class="tag tag--model">Estimated by model</span></div>
+    </section>
+
+    <section class="bm__how" id="how">
+      <div class="bm__sec"><p class="label">How it works</p><h2>Five steps, every day.</h2></div>
+      <ol class="bm__steps">
+        <li class="panel"><span class="label">01 · Activity</span><h3>How much did you train?</h3><p>The motion sensor tells resistance work from cardio by how fast the body moves. The workout log adds loads, sets and reps. Together they give an exercise dose, measured against the ISS routine: about 600 minutes a week, resistance training three days a week.</p></li>
+        <li class="panel"><span class="label">02 · Meals</span><h3>Did you eat enough?</h3><p>Each day's menu is checked against NASA's nutrition requirements on 11 nutrients: energy, protein, calcium, vitamins D and K, magnesium, potassium, omega-3, fluid, sodium and phosphorus. Shortfalls speed the loss up by as much as half.</p></li>
+        <li class="panel"><span class="label">03 · Bone</span><h3>A steady loss, slowed by exercise</h3><p class="bm__eq mono">bone(t) = bone(t−1) − k + saved − penalty</p><p>k is 1.25 % a month, the middle of NASA's range. Exercise can save up to 80 % of it; poor meals add to it.</p></li>
+        <li class="panel"><span class="label">04 · Muscle</span><h3>Four groups, four speeds</h3><p class="bm__eq mono">group(t) = group(t−1) × e<sup>−k·(1 − saved)·(1 + shortfall)</sup></p><p>Legs, back, calves and upper body each have their own loss rate. Exercise saves up to 70 %. The four combine into one strength number.</p></li>
+        <li class="panel"><span class="label">05 · Weekly test</span><h3>The model checks itself</h3><p>Every 7 days, a strength test. If it reads 2 points below the model, keep an eye on it; 4 points, act. Something the model cannot see has happened: an injury, an illness.</p></li>
+      </ol>
+    </section>
+
+    <section class="bm__try panel" id="try" aria-label="Run the model">
+      <div class="bm__tryhead">
+        <div><p class="label">Run the model · 180 days to Mars</p><h2>Change the plan. Watch what it costs.</h2></div>
+        <div class="bm__presets chips" role="group" aria-label="Scenarios">
+          <button class="chip" data-preset="mission" aria-pressed="true">The mission in the tool</button>
+          <button class="chip" data-preset="nominal" aria-pressed="false">Everything goes to plan</button>
+          <button class="chip" data-preset="stress" aria-pressed="false">Nourchene's stress test</button>
+        </div>
+      </div>
+      <div class="bm__ctl">
+        <label class="bm__f"><span class="label">Exercise · <output class="mono" id="doseOut">100 %</output> of the ISS routine</span><input type="range" id="dose" min="0" max="120" step="5" value="100" /></label>
+        <div class="bm__f"><span class="label">Meals</span>
+          <div class="seg" role="group" aria-label="Meals">
+            <button class="chip" data-food="full" aria-pressed="true">Full menu</button>
+            <button class="chip" data-food="short" aria-pressed="false">Short supply</button>
+            <button class="chip" data-food="crisis" aria-pressed="false">Crisis</button>
+          </div>
+        </div>
+        <div class="bm__f"><span class="label">What happens on the way</span>
+          <div class="chips">
+            <button class="chip" data-ev="fail" aria-pressed="true">Machine down · days 40 to 49</button>
+            <button class="chip" data-ev="crisis" aria-pressed="false">Food runs short · days 90 to 104</button>
+            <button class="chip" data-ev="hidden" aria-pressed="false">Hidden injury · day 120</button>
+          </div>
+        </div>
+      </div>
+      <div class="bm__body">
+        <div class="bm__charts">
+          <figure class="bm__chart" data-id="density"><figcaption><span class="label">Bone density · % of launch</span><span class="bm__v mono"></span></figcaption><div class="bm__plot"><svg aria-hidden="true"></svg></div></figure>
+          <figure class="bm__chart" data-id="muscle"><figcaption><span class="label">Muscle strength · % of launch</span><span class="bm__v mono"></span></figcaption><div class="bm__plot"><svg aria-hidden="true"></svg></div></figure>
+          <p class="bm__key label"><span><i class="k k--line"></i>Model</span><span><i class="k k--grp"></i>Muscle groups</span><span><i class="k k--test"></i>Weekly test</span><span><i class="k k--warn"></i>Keep an eye</span><span><i class="k k--lim"></i>Medical limit</span></p>
+        </div>
+        <aside class="bm__side">
+          <p class="label bm__day" aria-live="polite">Day <b class="mono">180</b> · drag across a chart</p>
+          <div class="bm__groups"></div>
+          <p class="label">What the tool would tell you</p>
+          <ol class="bm__log"></ol>
+        </aside>
+      </div>
+      <label class="sr" for="bmDay">Mission day</label><input class="sr" type="range" id="bmDay" min="1" max="180" value="180" />
+    </section>
+
+    <section class="bm__why">
+      <div class="bm__sec"><p class="label">Why a weekly test</p><h2>A model only knows what you tell it.</h2></div>
+      <div class="bm__cols">
+        <p>Turn on <em>Hidden injury</em> above. On day 120 the crew member strains a muscle and loses about 6 points of strength. Nothing in the logs changes: same workouts, same meals. The model's line carries on as if nothing happened.</p>
+        <p>The strength test on day 126 reads far below the line. That gap, not the line, is what raises the alarm, and it is why the muscle reading in the tool can reach its limit while the model still looks fine. After treatment starts, the tests climb back towards the line.</p>
+      </div>
+    </section>
+
+    <section class="bm__src panel">
+      <div>
+        <p class="label">Sources</p>
+        <ul>
+          <li>Bone loss of 1 to 1.5 % a month: <a href={HRP} target="_blank" rel="noopener">NASA Human Research Program, hazard "Gravity fields"</a></li>
+          <li>Medical limits, muscle strength at 80 % of baseline and bone density at 95 %: NASA-STD-3001 Vol. 1 Rev. C, [V1 4024] and [V1 4027]</li>
+          <li>ISS exercise, about 600 minutes a week: Scott et al. 2023, npj Microgravity</li>
+          <li>Nutrition requirements on 11 nutrients: NASA JSC-67378 Rev. 1</li>
+        </ul>
+      </div>
+      <div>
+        <p class="label">What we assumed</p>
+        <ul>
+          <li>Loss rates per muscle group, the share exercise can save (80 % bone, 70 % muscle) and how much poor meals add (up to 50 %).</li>
+          <li>The early warnings: bone at {B.model!.warn} %, muscle at {M.model!.warn} %, a loss faster than {B.model!.trend} (bone) or {M.model!.trend} (muscle) points in 30 days, and test gaps of 2 and 4 points. The limits themselves ({B.limit.v} % and {M.limit.v} %) are NASA's.</li>
+          <li>Food values per serving are approximate. All of these still need calibrating against NASA and ESA data.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="label">Credits</p>
+        <p>Models and C code by <b>Nourchene</b>: activity detection from the accelerometer, nutrition scoring, bone index, four-group muscle index and its anomaly checks. Ported to the browser for this page and the tool. Team 0G Health · NASA Space Apps 2026 · not a medical device.</p>
+        <p class="chips"><a class="chip" href="/">Back to the story</a><a class="chip" href="/app">Open the tool</a></p>
+      </div>
+    </section>
+  </div>
+  <script>import '../story/bm';</script>
+</Base>
+
+<style is:global>
+  .nav { position: absolute; }
+  .bm { padding: 120px var(--gutter) 48px; max-width: 1400px; margin: 0 auto; display: grid; gap: clamp(56px, 8vw, 110px); }
+  .bm h2 { font-size: clamp(28px, 3.4vw, 48px); font-weight: 600; line-height: 1.04; letter-spacing: -0.02em; margin-top: 8px; text-wrap: balance; max-width: 22ch; }
+  .bm h3 { font-size: 20px; font-weight: 600; line-height: 1.15; letter-spacing: -0.01em; }
+  .bm p { text-wrap: pretty; }
+  .bm em { font-style: normal; color: var(--bone); border-bottom: 1px solid var(--you); }
+  .bm__hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); grid-template-areas: 'l v' 'h v' 's v' 'j v'; column-gap: 48px; align-items: start; }
+  .bm__hero > .label { grid-area: l; margin-bottom: 18px; } .bm__hero .h { grid-area: h; } .bm__hero .sub { grid-area: s; } .bm__jump { grid-area: j; }
+  .bm__heroviz { grid-area: v; align-self: end; display: grid; gap: 10px; }
+  .bm__heroviz svg { width: 100%; height: auto; }
+  .bm__jump { display: flex; gap: 8px; margin-top: 28px; flex-wrap: wrap; }
+  .bm__jump .chip:first-child { color: var(--ink); background: var(--you); border-color: var(--you); }
+
+  .bm__facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: calc(-1 * clamp(20px, 4vw, 50px)); }
+  .bm__facts > div { padding: 20px; display: grid; gap: 10px; align-content: start; }
+  .bm__facts b { font-size: clamp(26px, 2.6vw, 38px); font-weight: 500; letter-spacing: -0.02em; color: var(--bone); }
+  .bm__facts span:not(.label):not(.tag) { color: var(--mute); font-size: 15px; line-height: 1.4; }
+  .bm__facts .label, .bm__facts .tag { justify-self: start; margin-top: 4px; }
+
+  .bm__sec { margin-bottom: 24px; }
+  .bm__steps { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; counter-reset: s; }
+  .bm__steps li { padding: 20px; display: grid; gap: 10px; align-content: start; position: relative; }
+  .bm__steps li:not(:last-child)::after { content: ''; position: absolute; right: -11px; top: 30px; width: 10px; height: 1px; background: var(--mute); }
+  .bm__steps p { color: var(--mute); font-size: 15px; line-height: 1.45; }
+  .bm__steps .bm__eq { color: var(--you); font-size: 12.5px; line-height: 1.5; padding: 10px 12px; background: var(--ink); border: 1px solid var(--line); border-radius: 4px; }
+
+  .bm__try { padding: clamp(18px, 2.4vw, 28px); display: grid; gap: 22px; }
+  .bm__tryhead { display: flex; justify-content: space-between; align-items: end; gap: 18px; flex-wrap: wrap; }
+  .bm__ctl { display: grid; grid-template-columns: minmax(200px, 1fr) auto minmax(0, 1.6fr); gap: 18px 28px; align-items: end; padding: 16px 0; border-block: 1px solid var(--line); }
+  .bm__f { display: grid; gap: 10px; }
+  .bm__f output { color: var(--bone); }
+  .bm input[type='range'] { width: 100%; accent-color: var(--you); }
+  .bm .seg { display: flex; padding: 3px; gap: 3px; border: 1px solid var(--line); border-radius: 4px; background: var(--ink); }
+  .bm .seg .chip { border: 0; background: none; padding: 7px 12px; }
+  .bm .seg .chip[aria-pressed='true'] { background: var(--bone); color: var(--ink); border-radius: 2px; }
+  .bm [data-ev][aria-pressed='true'] { color: var(--ink); background: var(--drift); border-color: var(--drift); }
+  .bm [data-ev='hidden'][aria-pressed='true'] { background: var(--limit); border-color: var(--limit); }
+
+  .bm__body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 24px; }
+  .bm__charts { display: grid; gap: 14px; }
+  .bm__chart figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+  .bm__v { font-size: 13px; color: var(--bone); text-align: right; }
+  .bm__plot { position: relative; height: clamp(170px, 22vw, 240px); cursor: ew-resize; touch-action: pan-y; }
+  .bm__plot svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .bm__key { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  .bm__key span { display: inline-flex; align-items: center; gap: 7px; }
+  .k { width: 18px; height: 0; display: inline-block; border-top: 2px solid var(--bone); }
+  .k--grp { border-top: 1px solid var(--mute); } .k--warn { border-top: 1px dashed var(--drift); } .k--lim { border-top: 1px dashed var(--limit); }
+  .k--test { width: 9px; height: 9px; border: 1.5px solid var(--bone); border-radius: 50%; }
+
+  .bm__side { display: grid; gap: 14px; align-content: start; }
+  .bm__day b { color: var(--bone); font-size: 13px; }
+  .bm__groups { display: grid; gap: 8px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .bm__g { display: grid; grid-template-columns: 82px 1fr 48px; gap: 10px; align-items: center; font-size: 14px; }
+  .bm__g span { color: var(--mute); }
+  .bm__g i { height: 8px; border-radius: 4px; background: var(--line); position: relative; overflow: hidden; }
+  .bm__g i::after { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--w); background: var(--c, var(--bone)); border-radius: 4px; }
+  .bm__g b { font-weight: 400; font-family: var(--mono); font-size: 12.5px; text-align: right; }
+  .bm__g[data-low] span { color: var(--bone); }
+  .bm__log { list-style: none; padding: 0; display: grid; gap: 8px; max-height: 420px; overflow-y: auto; }
+  .bm__log li { padding: 9px 11px; border: 1px solid var(--line); border-left: 3px solid var(--bone); border-radius: 4px; display: grid; gap: 2px; font-size: 14.5px; line-height: 1.35; cursor: pointer; }
+  .bm__log li:hover { border-color: var(--mute); }
+  .bm__log li[data-k='drift'] { border-left-color: var(--drift); } .bm__log li[data-k='limit'] { border-left-color: var(--limit); border-left-width: 5px; }
+  .bm__log li[data-k='ok'] { border-left-color: var(--you); } .bm__log li[data-future] { opacity: 0.38; }
+  .bm__log small { color: var(--mute); font-size: 13px; }
+  .bm__log .mono { font-size: 11px; color: var(--mute); }
+
+  .bm__cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 48px; max-width: 1100px; }
+  .bm__cols p { color: var(--mute); font-size: clamp(17px, 1.4vw, 20px); }
+  .bm__src { padding: clamp(18px, 2.4vw, 28px); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+  .bm__src ul { padding-left: 18px; display: grid; gap: 8px; margin-top: 12px; color: var(--mute); font-size: 15px; }
+  .bm__src p:not(.label) { color: var(--mute); font-size: 15px; margin-top: 12px; }
+  .bm__src b { color: var(--bone); font-weight: 500; }
+  .bm__src a { text-underline-offset: 3px; }
+  .bm__src .chips { margin-top: 16px; }
+
+  @media (max-width: 1100px) {
+    .bm__hero { grid-template-columns: 1fr; grid-template-areas: 'l' 'h' 's' 'j' 'v'; }
+    .bm__heroviz { margin-top: 36px; max-width: 520px; }
+    .bm__steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .bm__steps li:last-child { grid-column: 1 / -1; }
+    .bm__steps li::after { display: none; }
+    .bm__ctl { grid-template-columns: 1fr 1fr; } .bm__ctl > :last-child { grid-column: 1 / -1; }
+    .bm__body { grid-template-columns: 1fr; }
+    .bm__facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 640px) {
+    .bm { padding-top: 96px; }
+    .bm__steps, .bm__facts, .bm__cols, .bm__src, .bm__ctl { grid-template-columns: 1fr; }
+    .bm .seg .chip { padding: 7px 9px; }
+    .bm__chips .chip { white-space: normal; }
+    .bm .chip { white-space: normal; text-align: left; }
+  }
+</style>

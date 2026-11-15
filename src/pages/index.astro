@@ -15,7 +15,7 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
       <div class="ch__head">
         <p class="label rv">Team 0G Health · NASA Space Apps 2026 · Astronaut health self-check</p>
         <h1 class="h rv d1" style="margin-top:18px">Nobody notices a&nbsp;slow change.</h1>
-        <p class="sub rv d2">Baseline learns each astronaut's normal from a headpiece they sleep in, asks for two minutes each morning, and flags slow drift weeks before a medical limit.</p>
+        <p class="sub rv d2">Baseline learns each astronaut's normal from a headpiece they sleep in, asks for two minutes each morning, and flags slow drift weeks before a medical limit. If you cannot answer an alarm, it calls the doctor on&nbsp;board.</p>
       </div>
     </div>
   </section>
@@ -65,6 +65,17 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
   </section>
 
 
+  <section class="ch" id="call" data-ch="ccall" style="--len:5">
+    <div class="ch__pin">
+      <div class="stage stage--bleed"></div>
+      <div class="ch__head">
+        <h2 class="h rv">Hold to call. Or it calls for&nbsp;you.</h2>
+        <p class="sub rv d1">The doctor on board is one button away. Hold the lower button for a second, any time. Or, when one of your readings reaches its limit, the watch asks you first: press the crown to answer, or after ten seconds it calls for&nbsp;you.</p>
+      </div>
+      <p class="src">Simulated · the limit is skin temperature on a spacewalk day</p>
+    </div>
+  </section>
+
   <section class="ch" id="c05" data-ch="c05" style="--len:6">
     <div class="ch__pin">
       <div class="ch__head">
@@ -85,15 +96,16 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
             <div><div class="mono mc__time">0:00</div><div class="label">Morning check · day 104</div></div>
           </div>
           <ol class="mc__steps label">
-            <li data-step class="on"><b>01</b> Sit</li>
-            <li data-step><b>02</b> Check</li>
-            <li data-step><b>03</b> Act</li>
+            <li data-step class="on"><b>01</b> Contact</li>
+            <li data-step><b>02</b> Sit</li>
+            <li data-step><b>03</b> React</li>
+            <li data-step><b>04</b> Act</li>
           </ol>
-          <p class="mc__hint">Headpiece still on from the night. Sit still for a minute while it takes your resting&nbsp;pulse.</p>
+          <p class="mc__hint">Headpiece still on from the night. It checks that every sensor touches the&nbsp;skin.</p>
           <div class="mc__rows">
             <div class="mc__row"><i class="dot dot--drift"></i><span>Sleep <small>· overnight</small></span><b class="mono">6.4 h</b></div>
-            <div class="mc__row"><i class="dot dot--ok"></i><span>Resting pulse</span><b class="mono">54 bpm</b></div>
-            <div class="mc__row"><i class="dot dot--ok"></i><span>Heart-rhythm variability</span><b class="mono">66 ms</b></div>
+            <div class="mc__row"><i class="dot dot--ok"></i><span>Pulse <small>· SpO2</small></span><b class="mono">54 · 97 %</b></div>
+            <div class="mc__row"><i class="dot dot--ok"></i><span>Reaction <small>· 3 taps</small></span><b class="mono">286 ms</b></div>
             <div class="mc__row"><i class="dot dot--ok"></i><span>Skin temperature</span><b class="mono">34.6 °C</b></div>
           </div>
           <div class="mc__act">
@@ -164,7 +176,7 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
     <div class="ch__pin">
       <div class="ch__head">
         <h2 class="h rv">Raw brainwaves never leave the&nbsp;ship.</h2>
-        <p class="sub rv d1">Voice works the same way: opt-in, analysed on the device, never recorded.</p>
+        <p class="sub rv d1">Once a week Earth gets a one-page summary: each number, why it has its colour, and any calls to the doctor. Voice is opt-in, analysed on the device, never&nbsp;recorded.</p>
       </div>
       <div class="stage"></div>
     </div>
@@ -175,13 +187,14 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
       <div class="ch__head split">
         <div>
           <h2 class="h rv">What it cannot sense,&nbsp;yet.</h2>
-          <p class="sub rv d1">Three of the biggest long-term risks are out of the cap's reach. Here is how the tool tracks them today, and the algorithms we are building to do&nbsp;better.</p>
+          <p class="sub rv d1">Three of the biggest long-term risks are out of the cap's reach. Here is how the tool tracks them, and the models we are building to do better. The first, for bone and muscle, already runs in the&nbsp;tool.</p>
         </div>
         <div class="say rv d2">
           <p class="label say__t">Every number says where it came from</p>
           <dl>
           <div><dt><span class="tag tag--sensed">{TAGS.sensed}</span></dt><dd>A sensor measured it directly.</dd></div>
           <div><dt><span class="tag tag--ml">{TAGS.ml}</span></dt><dd>A model's best guess, with how sure it is.</dd></div>
+          <div><dt><span class="tag tag--model">{TAGS.model}</span></dt><dd>Worked out from what we know: workouts, meals, NASA loss rates.</dd></div>
           <div><dt><span class="tag tag--you">{TAGS.you}</span></dt><dd>Measured with a quick test, not a sensor. The tool keeps the record.</dd></div>
           <div><dt><span class="tag tag--ship">{TAGS.ship}</span></dt><dd>Read from the spacecraft's own instruments.</dd></div>
           </dl>
@@ -191,7 +204,7 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
         <article class="rv d1">
           <h3>Bone and muscle loss</h3>
           <div class="next__row"><span class="label">Today</span><p>You log each workout. Bone density is scanned before and after the mission.</p><span class="tag tag--you">{TAGS.you}</span></div>
-          <div class="next__row next__row--next"><span class="label">Next</span><p>An algorithm that turns the headpiece's motion and pulse during your workout into a daily loading score, so a week of light sessions shows up as drift.</p><span class="tag tag--next">In development</span></div>
+          <div class="next__row next__row--next"><span class="label">Now</span><p>A model turns your workouts and meals into a daily bone and muscle estimate, using NASA loss rates. A weekly strength test checks it and catches losses it cannot see, like an injury. <a class="next__more" href="/bone-muscle">Nourchene's model, explained&nbsp;→</a></p><span class="tag tag--model">{TAGS.model}</span></div>
         </article>
         <article class="rv d2">
           <h3>Vision change</h3>
@@ -212,11 +225,11 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
       <div class="stage stage--bleed"></div>
       <div class="ch__head end">
         <h2 class="h rv">Run your own morning&nbsp;check.</h2>
-        <p class="sub rv d1">Watch one simulated crew member fly 180 days to Mars, and see what the tool tells them along the way.</p>
-        <p class="rv d2 end__cta"><a class="btn" href="/app">Open the tool <span aria-hidden="true">→</span></a></p>
+        <p class="sub rv d1">Fit the headpiece, check the sensors and take the reaction test yourself. Then follow one simulated crew member for 180 days, with the weekly report and every source behind the&nbsp;numbers.</p>
+        <p class="rv d2 end__cta"><a class="btn" href="/app">Open the tool <span aria-hidden="true">→</span></a><a class="chip end__alt" href="/app#check">Try the morning check</a><a class="chip end__alt" href="/bone-muscle">Bone and muscle model</a><a class="chip end__alt" href="/app#sources">Sources and limits</a></p>
       </div>
       <footer class="foot label">
-        <span>Baseline by team 0G Health · NASA Space Apps Challenge 2026 · Health monitoring software</span>
+        <span>Baseline by team 0G Health · NASA Space Apps Challenge 2026 · Morning check, doctor call and weekly report from Mamadou's prototype · bone and muscle model by Nourchene</span>
         <span>A prototype. All data simulated. Not a medical device.</span>
       </footer>
     </div>
@@ -240,7 +253,7 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
   .mc { position: absolute; z-index: 3; right: 0; top: 0; width: min(380px, 40%); padding: 22px; display: grid; gap: 16px; opacity: 0; pointer-events: none; will-change: opacity, transform; }
   .mc__top { display: flex; gap: 14px; align-items: center; }
   .mc__time { font-size: 28px; line-height: 1; margin-bottom: 4px; }
-  .mc__steps { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .mc__steps { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; font-size: 9.5px; letter-spacing: 0.03em; }
   .mc__steps li { white-space: nowrap; padding-top: 8px; border-top: 2px solid var(--line); color: var(--mute); transition: color 0.3s, border-color 0.3s; }
   .mc__steps li b { font-weight: 400; color: inherit; margin-right: 4px; }
   .mc__steps li.on { color: var(--bone); border-color: var(--you); }
@@ -381,7 +394,9 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
   /* 15 */
   .end { margin: auto 0; display: grid; justify-items: center; text-align: center; }
   .end .h { max-width: 14ch; }
-  .end__cta { margin-top: 34px; }
+  .end__cta { margin-top: 34px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; }
+  .end__alt { color: var(--bone); border-color: var(--line); }
+  .next__more { color: var(--you); text-underline-offset: 3px; white-space: nowrap; pointer-events: auto; }
   .foot { display: flex; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; position: relative; z-index: 2; padding-left: 0; }
   .h--two span { color: #56565b; transition: color 0.35s ease; }
   .h--two span:global(.lit) { color: var(--bone); }

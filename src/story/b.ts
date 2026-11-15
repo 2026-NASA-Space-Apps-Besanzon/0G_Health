@@ -15,9 +15,10 @@ export function c05(sec: HTMLElement) {
   const btns = [...sec.querySelectorAll<HTMLButtonElement>('[data-mode]')];
   const narrowQ = matchMedia('(max-width: 640px)');
   const HINT = [
-    'Headpiece still on from the night. Sit still for a minute while it takes your resting pulse.',
-    'Last night and this morning, each against your own normal.',
-    'One action, and who hears about it.',
+    'Headpiece still on from the night. It checks that every sensor touches the skin.',
+    'Sit still, eyes closed, while it takes your resting pulse and SpO2.',
+    'Tap the moment the screen turns green. Three tries.',
+    'Each reading against your own normal. One action, and who hears about it.',
   ];
   let mode: 'day' | 'eva' = 'day', lastStep = -1;
   btns.forEach((b) => b.addEventListener('click', () => { mode = b.dataset.mode as 'day' | 'eva'; btns.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }));
@@ -50,12 +51,13 @@ export function c05(sec: HTMLElement) {
       panel.style.top = narrow ? 'auto' : `${f(Math.min((c.h - ch) / 2, c.h - ch))}px`;
       panel.style.transform = narrow ? `translateY(${f((1 - sv) * 20)}px)` : `translateX(${f((1 - sv) * 28)}px)`;
       panel.setAttribute('aria-hidden', String(sv < 0.5));
-      const t = seg(c.p, 0.3, 0.7), step = t < 0.5 ? 0 : t < 0.8 ? 1 : 2;
+      const t = seg(c.p, 0.3, 0.7), step = t < 0.2 ? 0 : t < 0.45 ? 1 : t < 0.7 ? 2 : 3;
       ring.style.strokeDashoffset = f(100 - t * 100);
       const secs = Math.round(t * 120); time.textContent = `${Math.floor(secs / 60)}:${pad(secs % 60)}`;
       steps.forEach((el, i) => { el.classList.toggle('on', i === step); el.classList.toggle('done', i < step); });
-      rows.forEach((el, i) => el.classList.toggle('on', t > 0.5 + i * 0.06));
-      act.classList.toggle('on', step === 2);
+      // overnight sleep is known first; pulse and SpO2 after sitting still; the reaction time after the taps
+      rows.forEach((el, i) => el.classList.toggle('on', t > [0.2, 0.4, 0.64, 0.68][i]));
+      act.classList.toggle('on', step === 3);
       if (step !== lastStep) { hint.textContent = HINT[step]; lastStep = step; }
 
       // the clock: centred, then shifted aside (or up, on a phone) while the card is open

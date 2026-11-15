@@ -1,8 +1,8 @@
 // Chapters 00–04: the problem and the proof.
 import { scene, Spring, SPRING, reduced, clamp, lerp, seg, easeOut, easeInOut, f, pts, path, line, circle, text, pad, wob, dot, rng, scrollToProgress } from '../lib/motion';
 import { dial, angleAt, angleDelta } from '../lib/dial';
-import { story, series, analyse, reading, LEARN, type Status } from '../lib/sim';
-import { Watch, WATCH, type Src } from '../lib/watch';
+import { story, series, analyse, reading, LEARN, EVA_DAY, type Status } from '../lib/sim';
+import { Watch, WATCH, type Src, type CallView } from '../lib/watch';
 
 // 00 · Nobody notices a slow change.
 export function c00(sec: HTMLElement) {
@@ -291,4 +291,125 @@ export function c04(sec: HTMLElement) {
   });
   sec.querySelector<HTMLElement>('.stage')!.style.cursor = 'grab';
   void grab;
+}
+
+// Hold to call. Or it calls for you.  Two ways to reach the crew medical officer on board:
+//   01 hold the lower watch button for a second (a finger comes in from the side and holds it), any time;
+//   02 when a reading hits its limit, the watch asks first: press the crown, or after 10 s it calls for you.
+// Click the watch during the countdown to answer it yourself. From Mamadou's watch prototype (0G Health).
+export function ccall(sec: HTMLElement) {
+  const src: Src = Object.fromEntries(WATCH.map((w) => { const rr = reading(w.id), v = series(w.id, 'mission'); return [w.id, { r: rr, vals: v, a: analyse(v, rr, 5) }]; }));
+  const watch = new Watch(src);
+  const head = sec.querySelector<HTMLElement>('.ch__head')!, stageEl = sec.querySelector<HTMLElement>('.stage')!;
+  const ROWS: { g: number; lab: string; desc: string }[] = [
+    { g: 0, lab: 'Lower button', desc: 'Hold the lower button for 1 s' },
+    { g: 0, lab: 'On board', desc: 'The doctor answers · no signal delay' },
+    { g: 1, lab: 'Limit', desc: 'A reading hits its limit · three long buzzes' },
+    { g: 1, lab: 'Crown', desc: 'Press the crown · no call, you act' },
+    { g: 1, lab: '10 s', desc: 'No answer · the watch calls the doctor' },
+  ];
+  const GROUPS = ['01 · Call any time', '02 · Or it prompts you'];
+  // scroll map: part one (hold) .06 to .42, part two (limit) .46 to 1
+  const P = { in: [0.06, 0.13], hold: [0.14, 0.26], ring: 0.26, on: 0.32, end: 0.39, out: [0.39, 0.45], lim: 0.47, cd: [0.53, 0.8], ring2: 0.8, on2: 0.88 };
+  let was = false, answered = false, count = 0, lastP = 0, geo = { cx: 0, cy: 0, r: 1 };
+
+  /**
+   * A pointing hand seen from the thumb side: the index finger straight out to the lower button,
+   * the other fingers curled under it, the thumb resting along them. Fingertip at (0, 0), hand to the right.
+   * It fades out towards the wrist, so it never ends in a hard edge.
+   */
+  const HAND = {
+    // back of the hand, knuckle, index finger out to the rounded tip, then the three curled fingers stepping back, then the palm edge
+    out: 'M540 -96C420 -84 300 -66 236 -50C214 -42 196 -34 170 -32C130 -30 80 -28 30 -26A26 26 0 0 0 30 26C70 29 110 31 150 32'
+      + 'C136 36 126 46 124 62C122 76 130 90 144 96C140 108 150 120 166 126C164 140 178 150 206 160C236 176 290 200 340 220L540 240',
+    // the thumb lying along the curled fingers, and the folds between them
+    inner: 'M520 12C420 22 300 34 214 42C184 44 168 50 168 60C168 72 184 76 212 74C300 68 420 64 520 66'
+      + 'M144 96C170 96 196 102 222 112M166 126C186 128 206 136 224 146',
+    nail: 'M8 -16C14 -22 26 -24 40 -24H54C58 -24 60 -21 58 -18',
+    thumbNail: 'M176 50C184 46 198 45 210 46',
+    creases: 'M76 -28q5 7 0 13M136 -31q5 7 0 13M64 28q-4 -6 0 -11M118 31q-4 -6 0 -11',
+  };
+  const finger = (slide: number, press: number, hold: number) => {
+    const x0 = slide * 520 - press * 3;
+    let s = `<g transform="translate(302 199) rotate(20)">`;
+    if (hold > 0) s += `<circle r="34" fill="none" stroke="var(--line)" stroke-width="2"/><circle r="34" fill="none" stroke="var(--you)" stroke-width="3" pathLength="100" stroke-dasharray="${f(hold * 100)} 100" transform="rotate(-110)"/>`;
+    s += `<defs><linearGradient id="callFade" gradientUnits="userSpaceOnUse" x1="300" x2="500" y1="0" y2="0"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#000"/></linearGradient>`
+      + `<mask id="callMask" maskUnits="userSpaceOnUse" x="-40" y="-200" width="640" height="480"><rect x="-40" y="-200" width="640" height="480" fill="url(#callFade)"/></mask></defs>`;
+    s += `<g transform="translate(${f(x0)} 0)" mask="url(#callMask)">`;
+    s += `<path d="${HAND.out}Z" fill="var(--ink)"/>`;
+    s += `<path d="${HAND.inner}" fill="none" stroke="var(--bone)" stroke-width="1.3" opacity="0.6" stroke-linecap="round"/>`;
+    s += `<path d="${HAND.out}" fill="none" stroke="var(--bone)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`;
+    s += `<path d="${HAND.nail}${HAND.thumbNail}" class="s-dim"/><path d="${HAND.creases}" class="s-hair"/>`;
+    return s + '</g></g>';
+  };
+
+  scene(sec, {
+    draw(c) {
+      const p = (lastP = c.p), partB = p >= P.lim, sr = stageEl.getBoundingClientRect(), hr = head.getBoundingClientRect();
+      const headBottom = hr.bottom - sr.top, headLeft = hr.left - sr.left, headRight = Math.max(...[...head.children].map((el) => el.getBoundingClientRect().right)) - sr.left;
+      if (!partB) answered = false;
+      if (partB && !was) { watch.buzz('limit'); watch.bezel.kick(-500); }
+      if (!partB && was) watch.hap.kind = '';
+      was = partB;
+
+      // part one: the finger comes in, holds, the call rings and connects, then the finger lets go
+      const slide = 1 - easeOut(seg(p, P.in[0], P.in[1])) + easeInOut(seg(p, P.out[0], P.out[1]));
+      const holding = p >= P.hold[0] && p < P.ring, hold = holding ? seg(p, P.hold[0], P.hold[1]) : 0, press = p >= P.hold[0] && p < P.end ? 1 : 0;
+      // part two: the limit, ten seconds to answer, then the call
+      count = partB && !answered ? 10 * (1 - seg(p, P.cd[0], P.cd[1])) : 0;
+      let phase: CallView['phase'] = '';
+      if (!partB) phase = p >= P.end && p < P.out[1] ? 'end' : p >= P.on ? 'on' : p >= P.ring ? 'ring' : '';
+      else if (!answered) phase = p >= P.on2 ? 'on' : p >= P.ring2 ? 'ring' : '';
+      watch.hap.ack = answered || phase !== '';
+      const at = !partB ? (p < P.in[0] ? -1 : p < P.on ? 0 : 1) : answered ? 3 : p < P.cd[0] ? 2 : p < P.ring2 ? 3 : 4;
+
+      // layout: the watch in the open space right of the text, centred on the screen; on a phone, under the text
+      const wide = c.w >= 820 && c.w > c.h * 1.1;
+      let k: number, wx: number, wy: number;
+      if (wide) {
+        // never over the text: the watch and the hand beside it fit in the space right of the headline
+        k = clamp(Math.min((c.h * 0.6) / 320, (c.w * 0.36) / 320, (c.w - headRight - 100) / 400), 0.5, 1.35);
+        wx = clamp(c.w * 0.6, headRight + 50 + 160 * k, c.w - 200 * k); wy = c.h * 0.5;
+      } else {
+        k = clamp(Math.min((c.h - headBottom - 150) / 330, (c.w - 40) / 330), 0.45, 1);
+        wx = c.w / 2 - 20 * k; wy = headBottom + 24 + 160 * k;
+      }
+      geo = { cx: wx, cy: wy, r: 136 * k };
+      const day = partB ? EVA_DAY : EVA_DAY - 1;
+      let s = `<g transform="translate(${f(wx - 160 * k)} ${f(wy - 160 * k)}) scale(${f(k)})">`;
+      s += watch.draw({ day, dt: c.dt, now: c.t, msg: partB ? 'Limit · Skin temp' : 'In your normal', st: partB ? 'limit' : 'ok', bezelDeg: day * 6, call: { phase, count, hold, still: true, auto: partB, secs: phase !== 'on' ? 0 : partB ? seg(p, P.on2, 1) * 30 : seg(p, P.on, P.end) * 40 } });
+      if (!partB && slide < 1) s += finger(slide, press, hold);
+      s += '</g>';
+
+      // under the watch: what is happening now
+      const note = !partB
+        ? (holding ? `Keep holding · ${Math.max(0.1, 1 - hold).toFixed(1)} s` : phase === 'ring' ? 'Calling the crew medical officer' : phase === 'on' ? 'Doctor on the line · on board' : phase === 'end' ? 'Call ended' : 'Any time · one finger, one button')
+        : count > 0 && p >= P.cd[0] ? `Calls the doctor in ${Math.ceil(count)} s` : phase === 'ring' ? 'No answer · calling the crew medical officer' : phase === 'on' ? 'Doctor on the line · on board' : answered ? 'You answered · no call' : 'Three long buzzes';
+      const nc = partB && !answered && !phase ? 't-limit' : phase || holding || answered ? 't-you' : 't-fg';
+      const ny = wy + 150 * k + 30;
+      s += text(wx, ny, note, `t-label ${nc}`, 'text-anchor="middle"');
+      if (partB && count > 0 && p >= P.cd[0]) s += text(wx, ny + 18, 'Tap the watch to answer', 't-label', 'text-anchor="middle" opacity="0.7"');
+
+      if (wide) {
+        // two ways, five steps; the current one lights
+        const y0 = Math.max(headBottom + 56, 40), rh = clamp((c.h - y0 - 70) / 6.6, 34, 58), gap = rh * 0.8;
+        const Y = (i: number) => y0 + gap * (ROWS[i].g + 1) + i * rh - 6;
+        ROWS.forEach((r, i) => {
+          if (i === 0 || i === 2) s += text(headLeft, Y(i) - gap * 0.75, GROUPS[r.g], `t-label ${r.g === (partB ? 1 : 0) && at >= 0 ? 't-fg' : ''}`);
+          const y = Y(i), on = i === at, past = at > i && !(answered && i === 4) && (r.g === (partB ? 1 : 0) || (partB && r.g === 0));
+          const col = on ? (r.g === 1 && !answered && i !== 3 ? 'limit' : 'you') : '';
+          const lx = headLeft + 8;
+          if (i === 1 || i === 3 || i === 4) s += line(lx, Y(i - 1) + 8, lx, y - 8, 's-hair');
+          s += circle(lx, y, on ? 6 : 4.5, on ? `f-${col}` : past ? 'f-fg' : 'f-bg', on || past ? '' : 'stroke="var(--line)" stroke-width="1.5"');
+          s += `<g opacity="${answered && i === 4 ? 0.28 : on || past ? 1 : 0.5}">` + text(lx + 22, y - 4, r.lab, `t-label${col ? ' t-' + col : ''}`) + text(lx + 22, y + 16, r.desc, on ? 't-fg' : 't-label', `style="font-size:${on ? 17 : 15}px;font-family:var(--sans);letter-spacing:0;text-transform:none"`) + '</g>';
+        });
+      } else if (at >= 0) {
+        s += text(c.w / 2, ny + 44, GROUPS[ROWS[at].g], 't-label', 'text-anchor="middle"') + text(c.w / 2, ny + 62, ROWS[at].desc, 't-label t-fg', 'text-anchor="middle"');
+      }
+      c.section.dataset.hap = watch.active;
+      return s;
+    },
+    onDown(c) { return Math.hypot(c.mx - geo.cx, c.my - geo.cy) <= geo.r * 1.15; },
+    onUp() { if (count > 0 && !answered && lastP >= P.cd[0]) { answered = true; watch.acknowledge(); } },
+  });
 }

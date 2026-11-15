@@ -23,9 +23,13 @@ import Base from '../layouts/Base.astro';
         <p class="label">On the wrist · screen and vibration only</p>
         <svg viewBox="0 0 320 320" aria-hidden="true"></svg>
         <button class="chip ack" hidden>Press the crown · acknowledge</button>
+        <p class="call label" aria-live="assertive"></p>
+        <button class="sr call__kb">Call the crew medical officer (lower watch button)</button>
+        <div class="ppg"><span class="label">PPG · live</span><svg viewBox="0 0 160 28" preserveAspectRatio="none" aria-hidden="true"></svg><span class="mono ppg__v"></span></div>
         <div class="hap">
           <span class="hap__k" data-k="drift"><span class="hap__i"><i></i><i></i></span><span><b>Two taps</b> · something is drifting</span></span>
           <span class="hap__k" data-k="limit"><span class="hap__i"><i class="l"></i><i class="l"></i><i class="l"></i></span><span><b>Three long buzzes</b> · a limit, repeats until acknowledged</span></span>
+          <span class="hap__k" data-k="call"><span class="hap__i"><i class="b"></i></span><span><b>Lower button, hold</b> · calls the medical officer on board. Leave a limit unanswered for 10 s and the watch calls for you</span></span>
           <span class="hap__k hap__c"><span class="hap__i"><i class="c"></i></span><span>Each colour is one vital · <em>green ring</em> your normal · <em class="r">red line</em> the limit</span></span>
         </div>
         <button class="chip hap__phone" hidden aria-pressed="false">Also vibrate this phone</button>
@@ -56,6 +60,7 @@ import Base from '../layouts/Base.astro';
         <div class="seg" role="group" aria-label="Show readings as">
           <button class="chip" data-view="tiles" aria-pressed="true">Tiles</button>
           <button class="chip" data-view="table" aria-pressed="false">Table</button>
+          <button class="chip" data-view="week" aria-pressed="false">Week</button>
         </div>
       </div>
       <div class="tiles"></div>
@@ -68,6 +73,19 @@ import Base from '../layouts/Base.astro';
         </div>
         <p class="label tbl__key"><span class="up">▲▼ Red: toward the limit</span> · <span class="dn">green: away from it</span> · <span>grey: within day-to-day noise</span> · Δ from normal coloured by today's status</p>
       </div>
+      <div class="wk" hidden>
+        <div class="wk__top">
+          <div><p class="label">Weekly report · <span class="wk__span"></span></p><p class="wk__verdict"></p></div>
+          <button class="chip wk__dl">Download the summary for Earth · .txt</button>
+        </div>
+        <div class="tbl__wrap">
+          <table>
+            <thead><tr><th scope="col">Reading</th><th scope="col">Last 7 days</th><th scope="col">Today</th><th scope="col">Status</th><th scope="col">Why this colour</th><th scope="col">What to do</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="label tbl__key">Green band: your own normal · dashed line: the model's warning level · colours come from your normal, not from ranges built for everyone</p>
+      </div>
       <div class="d">
         <div class="d__text">
           <h2 class="d__name"></h2>
@@ -79,6 +97,47 @@ import Base from '../layouts/Base.astro';
         <div class="chart"><svg aria-hidden="true"></svg></div>
       </div>
     </section>
+    <section class="chk panel" id="check" aria-labelledby="chk-h">
+      <div class="chk__intro">
+        <p class="label">Try it · the morning check</p>
+        <h2 id="chk-h">Two minutes after you wake.</h2>
+        <p>The check the crew member does every morning, with the headpiece still on from the night. You do the reaction test yourself. The readings come from mission day <b class="chk__day mono"></b>.</p>
+        <ol class="chk__steps label"><li>01 Fit</li><li>02 Contact</li><li>03 Sit still</li><li>04 Reaction</li><li>05 Result</li></ol>
+      </div>
+      <div class="chk__stage" aria-live="polite"></div>
+    </section>
+
+    <section class="srcs panel" id="sources" aria-labelledby="srcs-h">
+      <div class="srcs__head"><p class="label">Where the numbers come from</p><h2 id="srcs-h">Sources and limits</h2></div>
+      <div class="srcs__cols">
+        <dl class="srcs__list">
+          <div><dt>NASA Human Research Program, "5 Hazards of Human Spaceflight"</dt><dd>Radiation, isolation and confinement, distance from Earth, gravity fields, hostile and closed environments.</dd></div>
+          <div><dt>NASA HRP, "Hazard: Gravity Fields"</dt><dd>Bone loss of 1 to 1.5 % per month in weightlessness. The bone model uses 1.25 %.</dd></div>
+          <div><dt>NASA OCHMO-MTB-013, "Bone Loss"</dt><dd>Hip and spine density kept at 95 % or more of the pre-flight value. Loading exercise 2 to 3 times a week to keep bone.</dd></div>
+          <div><dt>NASA OCHMO-TB-031, "Exercise Overview"</dt><dd>Strength and aerobic capacity kept at 80 % or more of baseline. Sessions over 20 minutes, at least 3 times a week.</dd></div>
+          <div><dt>NASA-STD-3001 Vol. 1 Rev. C, [V1 4024] and [V1 4027]</dt><dd>Muscle strength at 80 % or more of baseline; hip and spine density at 95 %, femoral neck at 90 %.</dd></div>
+          <div><dt>NASA-STD-3001 Vol. 1 Rev. C, [V1 3004]</dt><dd>Private two-way communication with the ground and private transfer of medical data. Basis for the call and the summary.</dd></div>
+          <div><dt>NASA-STD-3001 Vol. 1 Rev. C, [V1 4011] and [V1 4014]</dt><dd>Cognitive state, task and sleep time within accepted limits. Basis for the reaction test and sleep tracking.</dd></div>
+          <div><dt>NASA OCHMO-TB-041, "Sleep Accommodations"</dt><dd>7 to 9 hours of sleep for an adult. Short sleep reduces sustained attention.</dd></div>
+          <div><dt>NASA JSC-67378 Rev. 1, nutrition requirements</dt><dd>Energy, calcium, vitamin D and protein needs used in the bone and muscle models.</dd></div>
+          <div><dt>Scott et al. 2023, npj Microgravity</dt><dd>Exercise minutes and loads on the ISS, used as the reference exercise dose.</dd></div>
+          <div><dt>NASA Science, "Mars Relay Network"</dt><dd>A one-way message between Earth and Mars takes about 3 to 22 minutes.</dd></div>
+          <div><dt>Canadian Space Agency, "Monitoring radiation for astronaut health"</dt><dd>Neutron monitoring on the ISS, the basis for the radiation reading.</dd></div>
+        </dl>
+        <div class="srcs__lim">
+          <h3>What is assumed</h3>
+          <ul>
+            <li>Every reading on this page is simulated. No real sensor or crew record is used.</li>
+            <li>Alert levels for bone (97 and 95 %) and the muscle trend and strength-test gaps are project assumptions, still to calibrate with NASA and ESA data. The muscle limit uses NASA's 80 %.</li>
+            <li>Bone density cannot be measured in flight. The bone reading is an estimate from exercise and meals.</li>
+            <li>The reaction test normal of 200 to 350 ms, the SpO2 normal of 95 % or more and the alpha rhythm of 8 to 12 Hz are general adult values, not calibrated on crew data.</li>
+            <li>No diagnosis, no prediction of heart events and no reading of emotions from the voice.</li>
+          </ul>
+          <p class="label">Morning check, call and weekly report from Mamadou's prototype · bone and muscle models from Nourchene's (<a href="/bone-muscle">how they work</a>) · team 0G Health</p>
+        </div>
+      </div>
+    </section>
+
     <p class="label app__foot">Baseline by team 0G Health · prototype · all data simulated · not a medical device</p>
   </div>
   <script>import '../story/app';</script>
@@ -183,6 +242,71 @@ import Base from '../layouts/Base.astro';
   .d__what { font-size: 16px; } .d__why { font-size: 15px; color: var(--mute); }
   .chart { position: relative; height: 210px; }
   .app__foot { text-align: center; padding-top: 6px; }
+  /* calling the crew medical officer */
+  .call { justify-self: center; min-height: 1.5em; text-align: center; transition: color 0.2s; }
+  .call[data-phase='count'] { color: var(--limit); } .call[data-phase='ring'], .call[data-phase='on'] { color: var(--you); }
+  .hap__k i.b { width: 7px; height: 14px; border-radius: 2px; background: var(--you); transform: rotate(14deg); }
+  .ev--call { border-left-color: var(--you); border-left-width: 5px; } .ev--call b { color: var(--you); }
+  /* live PPG */
+  .ppg { justify-self: stretch; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; border-top: 1px solid var(--line); padding-top: 10px; }
+  .ppg svg { width: 100%; height: 28px; }
+  .ppg__v { font-size: 12.5px; color: var(--bone); white-space: nowrap; }
+  /* weekly report */
+  .wk { display: grid; gap: 10px; } .wk[hidden] { display: none; }
+  .wk__top { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; }
+  .wk__verdict { font-size: clamp(19px, 1.7vw, 24px); font-weight: 600; line-height: 1.2; margin-top: 4px; }
+  .wk__verdict[data-st='ok'] { color: var(--you); } .wk__verdict[data-st='drift'] { color: var(--drift); } .wk__verdict[data-st='limit'] { color: var(--limit); }
+  .wk table { width: 100%; border-collapse: collapse; min-width: 980px; font-size: 14.5px; }
+  .wk th { font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mute); text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .wk td { padding: 9px 12px; border-bottom: 1px solid #222224; vertical-align: middle; color: var(--mute); }
+  .wk tr:last-child td { border-bottom: 0; }
+  .wk td:first-child { color: var(--bone); white-space: nowrap; } .wk td:first-child small { display: block; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mute); }
+  .wk__v { color: var(--bone) !important; white-space: nowrap; } .wk__v small { color: var(--mute); }
+  .wk__st { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; color: var(--bone); }
+  .wk tr[data-st='drift'] .wk__st { color: var(--drift); } .wk tr[data-st='limit'] .wk__st, .wk tr[data-st='limit'] td:first-child { color: var(--limit); }
+  .wk__why { min-width: 220px; } .wk__do { min-width: 220px; color: var(--bone) !important; }
+  .wk tr[data-st='ok'] .wk__do, .wk tr[data-st='learn'] .wk__do { color: var(--mute) !important; }
+  .wk tbody tr { cursor: pointer; transition: background 0.15s; } .wk tbody tr:hover { background: #1c1c1e; }
+  .wk tbody tr[aria-selected='true'] { background: #222225; box-shadow: inset 3px 0 0 var(--bone); }
+  .wk__sp { display: block; }
+  .wk__dl { color: var(--bone); border-color: var(--bone); }
+  /* try the morning check */
+  .chk { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 32px; }
+  .chk__intro { display: grid; gap: 12px; align-content: start; }
+  .chk__intro h2 { font-size: clamp(24px, 2.4vw, 34px); font-weight: 600; line-height: 1.08; letter-spacing: -0.02em; }
+  .chk__intro p:not(.label) { color: var(--mute); max-width: 46ch; } .chk__intro b { color: var(--bone); font-weight: 400; }
+  .chk__steps { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 6px; }
+  .chk__steps li { transition: color 0.2s; } .chk__steps li.on { color: var(--you); } .chk__steps li.done { color: var(--bone); }
+  .chk__stage { display: grid; gap: 12px; align-content: start; min-height: 320px; border-left: 1px solid var(--line); padding-left: 32px; }
+  .chk__stage h3 { font-size: 22px; font-weight: 600; }
+  .chk__p { color: var(--mute); } .chk__p b { color: var(--bone); font-weight: 500; } .chk__warn { color: var(--drift); }
+  .chk__list { padding-left: 20px; display: grid; gap: 8px; }
+  .chk__go { justify-self: start; color: var(--ink); background: var(--you); border-color: var(--you); font-weight: 600; }
+  .chk__go:hover { color: var(--ink); border-color: var(--bone); }
+  .chk__ch, .chk__res { list-style: none; padding: 0; display: grid; }
+  .chk__ch li, .chk__res li { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); }
+  .chk__ch small { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mute); }
+  .chk__ch li[data-s='wait'] b { color: var(--mute); } .chk__ch li[data-s='ok'] b { color: var(--you); } .chk__ch li[data-s='weak'] b { color: var(--drift); }
+  .chk__res li { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  .chk__res b { font-weight: 400; font-size: 18px; } .chk__res small { color: var(--mute); font-size: 0.7em; }
+  .chk__st { display: inline-flex; align-items: center; gap: 8px; color: var(--mute); font-size: 14px; justify-self: end; text-align: right; }
+  .chk__big { font-size: clamp(44px, 5vw, 72px); line-height: 1; color: var(--bone); }
+  .chk__bar { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; } .chk__bar i { display: block; height: 100%; background: var(--you); }
+  .chk__tile { height: 150px; border-radius: 10px; border: 1px solid var(--line); background: #161618; font-family: var(--mono); font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mute); cursor: pointer; touch-action: manipulation; user-select: none; }
+  .chk__tile[data-r='go'] { background: var(--you); color: var(--ink); border-color: var(--you); font-size: 20px; font-weight: 600; }
+  .chk__tile[data-r='early'] { color: var(--drift); border-color: var(--drift); }
+  .chk__tile:focus-visible { outline: 2px solid var(--bone); outline-offset: 3px; }
+  /* sources */
+  .srcs { display: grid; gap: 18px; }
+  .srcs__head h2 { font-size: clamp(22px, 2vw, 28px); font-weight: 600; margin-top: 6px; }
+  .srcs__cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 32px; }
+  .srcs__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 24px; }
+  .srcs__list dt { font-size: 14.5px; color: var(--bone); line-height: 1.3; } .srcs__list dd { font-size: 14px; color: var(--mute); margin-top: 3px; }
+  .srcs__lim { display: grid; gap: 10px; align-content: start; border-left: 1px solid var(--line); padding-left: 32px; }
+  .srcs__lim h3 { font-size: 18px; font-weight: 600; } .srcs__lim ul { padding-left: 18px; display: grid; gap: 8px; color: var(--mute); font-size: 14.5px; }
+  @media (max-width: 1020px) { .chk, .srcs__cols { grid-template-columns: 1fr; } .chk__stage, .srcs__lim { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 18px; } }
+  @media (max-width: 700px) { .srcs__list { grid-template-columns: 1fr; } .chk__res li { grid-template-columns: 1fr auto; } .chk__st { grid-column: 1 / -1; justify-self: start; } }
+
   @media (max-width: 1020px) { .mid { grid-template-columns: 1fr 1fr; } .log { grid-column: 1 / -1; min-height: 0; } }
   @media (max-width: 700px) { .app { padding-top: 72px; } .mid { grid-template-columns: 1fr; } .d { grid-template-columns: 1fr; } .trk { height: 118px; } .now__say { min-height: 0; } }
   @media (prefers-reduced-motion: reduce) { .ev--new, .watch[data-hap='limit'], .hap__k.on i { animation: none; } }

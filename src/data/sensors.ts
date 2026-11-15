@@ -1,7 +1,8 @@
-export type TagKind = 'sensed' | 'ml' | 'you' | 'ship';
+export type TagKind = 'sensed' | 'ml' | 'model' | 'you' | 'ship';
 export const TAGS: Record<TagKind, string> = {
   sensed: 'Sensed',
   ml: 'Estimated by ML',
+  model: 'Estimated by model',
   you: 'We measure it',
   ship: 'From the ship',
 };
@@ -47,13 +48,13 @@ export const SENSORS: Sensor[] = [
   },
   {
     id: 'ppg', no: 'S-03', short: 'PPG', name: 'PPG, optical pulse', grams: 4,
-    job: 'A small light and photodiode at the temple that watches blood pulse under the skin.',
+    job: 'A small light and photodiode at the temple that watches blood pulse under the skin, and how much oxygen it carries (SpO2).',
     watches: 'Heart and stress load',
     sits: 'Right temple, just ahead of the ear cup. An ear-clip variant fits the headpiece.',
     shows: [
       { label: 'Resting pulse', value: '54', unit: 'bpm', tag: 'sensed', note: 'Taken during the still two minutes each morning.' },
       { label: 'Heart-rhythm variability', value: '68', unit: 'ms', tag: 'sensed', note: 'Higher is calmer. Falling for weeks means load is building.' },
-      { label: 'Blood oxygen', value: '97', unit: '%', tag: 'sensed', note: 'The number to watch on a spacewalk.' },
+      { label: 'Blood oxygen (SpO2)', value: '97', unit: '%', tag: 'sensed', note: 'The number to watch on a spacewalk. 95 % or more is normal.' },
     ],
     cannot: 'It is an optical sensor, not a chest-electrode heart trace. It gives rate, rhythm variability and oxygen. It cannot show the electrical shape of a heartbeat.',
     limit: 'Optical only. It cannot show the electrical shape of a heartbeat.',
