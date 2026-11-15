@@ -10,7 +10,7 @@
 
 The summary of our work can be viewed in this YouTube video:
 
-<!-- TODO: paste the public YouTube link here -->
+https://www.youtube.com/watch?v=5AP9N7kCnkY
 
 ## Team
 
