@@ -2,7 +2,7 @@ export type TagKind = 'sensed' | 'ml' | 'you' | 'ship';
 export const TAGS: Record<TagKind, string> = {
   sensed: 'Sensed',
   ml: 'Estimated by ML',
-  you: 'You measure it',
+  you: 'We measure it',
   ship: 'From the ship',
 };
 
@@ -27,7 +27,7 @@ export const SENSORS: Sensor[] = [
     sits: 'Seven contacts across the crown, pressed lightly against the scalp.',
     shows: [
       { label: 'Alertness', value: '72', unit: '/ 100', tag: 'ml', note: 'Always drawn with a confidence band, never a bare number.' },
-      { label: 'Sleep stages', value: '6.9', unit: 'h', tag: 'ml', note: 'From the soft headband at night.' },
+      { label: 'Sleep stages', value: '6.9', unit: 'h', tag: 'ml', note: 'From the soft headpiece at night.' },
     ],
     cannot: 'It cannot read thoughts or diagnose a condition. It estimates alertness and sleep, and it can be wrong, so every estimate shows how sure it is.',
     limit: 'Cannot read thoughts or diagnose. It estimates, and shows how sure it is.',
@@ -49,7 +49,7 @@ export const SENSORS: Sensor[] = [
     id: 'ppg', no: 'S-03', short: 'PPG', name: 'PPG, optical pulse', grams: 4,
     job: 'A small light and photodiode at the temple that watches blood pulse under the skin.',
     watches: 'Heart and stress load',
-    sits: 'Right temple, just ahead of the ear cup. An ear-clip variant fits the headband.',
+    sits: 'Right temple, just ahead of the ear cup. An ear-clip variant fits the headpiece.',
     shows: [
       { label: 'Resting pulse', value: '54', unit: 'bpm', tag: 'sensed', note: 'Taken during the still two minutes each morning.' },
       { label: 'Heart-rhythm variability', value: '68', unit: 'ms', tag: 'sensed', note: 'Higher is calmer. Falling for weeks means load is building.' },

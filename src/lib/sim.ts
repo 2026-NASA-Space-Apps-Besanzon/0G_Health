@@ -19,7 +19,7 @@ export interface Reading {
 }
 
 export const READINGS: Reading[] = [
-  { id: 'sleep', label: 'Sleep', unit: 'h', dec: 1, sensor: 'eeg', source: 'EEG headband', tag: 'ml', region: 'brain', mean: 7.1, sd: 0.2, limit: { dir: 'lo', v: 6.0 }, conf: 0.25,
+  { id: 'sleep', label: 'Sleep', unit: 'h', dec: 1, sensor: 'eeg', source: 'EEG headpiece', tag: 'ml', region: 'brain', mean: 7.1, sd: 0.2, limit: { dir: 'lo', v: 6.0 }, conf: 0.25,
     what: 'Hours actually asleep, staged from brain activity overnight.',
     why: 'With no sunrise and a noisy cabin, sleep erodes slowly. Short sleep feeds errors, low mood and a weaker immune system.',
     action: { you: 'Tonight: dim the cabin lights and screens 30 minutes earlier. Keep the same wake time.', crew: 'If it keeps drifting for 5 more days, ask the crew medical officer to review your schedule.', ground: 'Summary goes to the flight surgeon in the weekly report.' } },

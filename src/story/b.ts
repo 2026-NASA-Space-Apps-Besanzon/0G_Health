@@ -1,25 +1,98 @@
-// Chapters 05–10: the product.
+// Chapters 05–06 and 14: the routine, the hardware, the honesty.
 import { animate, stagger, createSpring } from 'animejs';
-import { scene, Spring, SPRING, reduced, clamp, lerp, seg, f, pts, path, line, circle, text, pad, dot, rng, scrollToProgress } from '../lib/motion';
+import { scene, Spring, SPRING, reduced, clamp, lerp, seg, f, path, line, circle, text, pad, scrollToProgress } from '../lib/motion';
 import { renderCap } from '../lib/iso';
 import { rawSignal } from '../lib/signal';
 import { SENSORS, type SensorId } from '../data/sensors';
-import { angleAt } from '../lib/dial';
 
-// 05 · Two minutes, every morning.
+// 05 · Sleep in it. Two minutes when you wake.
+// Scrolling turns a 24-hour clock from 21:00 to 21:00. At 06:00 the clock slides aside and the morning check opens next to it.
 export function c05(sec: HTMLElement) {
   const steps = [...sec.querySelectorAll<HTMLElement>('[data-step]')];
   const rows = [...sec.querySelectorAll<HTMLElement>('.mc__row')];
   const ring = sec.querySelector<SVGCircleElement>('.mc__ring')!, time = sec.querySelector<HTMLElement>('.mc__time')!;
-  const act = sec.querySelector<HTMLElement>('.mc__act')!, panel = sec.querySelector<HTMLElement>('.mc')!;
+  const act = sec.querySelector<HTMLElement>('.mc__act')!, panel = sec.querySelector<HTMLElement>('.mc')!, hint = sec.querySelector<HTMLElement>('.mc__hint')!;
+  const btns = [...sec.querySelectorAll<HTMLButtonElement>('[data-mode]')];
+  const narrowQ = matchMedia('(max-width: 640px)');
+  const HINT = [
+    'Headpiece still on from the night. Sit still for a minute while it takes your resting pulse.',
+    'Last night and this morning, each against your own normal.',
+    'One action, and who hears about it.',
+  ];
+  let mode: 'day' | 'eva' = 'day', lastStep = -1;
+  btns.forEach((b) => b.addEventListener('click', () => { mode = b.dataset.mode as 'day' | 'eva'; btns.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }));
+  // 21:00 → 06:00 (night) → 06:00–06:02 (the check, slowed right down) → 21:00 (the day)
+  const CHECK = 2 / 60;
+  const hourAt = (p: number) =>
+    p < 0.3 ? lerp(21, 30, seg(p, 0.05, 0.3)) : p < 0.7 ? 30 + CHECK * seg(p, 0.3, 0.7) : lerp(30 + CHECK, 45, seg(p, 0.7, 0.96));
+  const hand = new Spring(21, 120, 22), show = new Spring(0, 140, 17), capArc = new Spring(0, ...SPRING.snap), gymArc = new Spring(1, ...SPRING.snap);
+  // the daily workout (about two hours on the ISS); a spacewalk replaces it
+  const GYM: [number, number] = [16.5, 18.5];
+  const wear = (h: number): [string, string] => {
+    if (h >= 22 || h < 6) return ['Headpiece', 'Recording the night'];
+    if (h < 6 + CHECK + 0.01) return ['Headpiece', 'Morning check'];
+    if (mode === 'eva' && h >= 9 && h < 15.5) return ['Cap', 'Spacewalk'];
+    if (mode === 'day' && h >= GYM[0] && h < GYM[1]) return ['Headpiece', 'Workout'];
+    return ['Nothing', 'Nothing to wear'];
+  };
   scene(sec, {
     draw(c) {
-      const t = seg(c.p, 0.04, 0.42), step = c.p < 0.42 ? 0 : c.p < 0.72 ? 1 : 2;
-      ring.style.strokeDashoffset = String(100 - t * 100);
+      hand.set(hourAt(c.p)); hand.step(c.dt);
+      const open = c.p > 0.285 && c.p < 0.74;
+      show.set(open ? 1 : 0); show.step(c.dt);
+      capArc.set(mode === 'eva' ? 1 : 0); capArc.step(c.dt); gymArc.set(mode === 'day' ? 1 : 0); gymArc.step(c.dt);
+      const sv = clamp(show.v), narrow = narrowQ.matches;
+
+      // the card: opacity and slide follow the same spring that moves the clock
+      const cw = panel.offsetWidth, ch = panel.offsetHeight;
+      panel.style.opacity = f(sv);
+      // centred beside the clock; when the stage is shorter than the card, it sits on the stage floor and rises into the free space beside the headline
+      panel.style.top = narrow ? 'auto' : `${f(Math.min((c.h - ch) / 2, c.h - ch))}px`;
+      panel.style.transform = narrow ? `translateY(${f((1 - sv) * 20)}px)` : `translateX(${f((1 - sv) * 28)}px)`;
+      panel.setAttribute('aria-hidden', String(sv < 0.5));
+      const t = seg(c.p, 0.3, 0.7), step = t < 0.5 ? 0 : t < 0.8 ? 1 : 2;
+      ring.style.strokeDashoffset = f(100 - t * 100);
       const secs = Math.round(t * 120); time.textContent = `${Math.floor(secs / 60)}:${pad(secs % 60)}`;
-      steps.forEach((el, i) => el.classList.toggle('on', i === step));
-      rows.forEach((el, i) => el.classList.toggle('on', c.p > 0.42 + i * 0.06));
-      act.classList.toggle('on', step === 2); panel.dataset.s = String(step);
+      steps.forEach((el, i) => { el.classList.toggle('on', i === step); el.classList.toggle('done', i < step); });
+      rows.forEach((el, i) => el.classList.toggle('on', t > 0.5 + i * 0.06));
+      act.classList.toggle('on', step === 2);
+      if (step !== lastStep) { hint.textContent = HINT[step]; lastStep = step; }
+
+      // the clock: centred, then shifted aside (or up, on a phone) while the card is open
+      let cx: number, cy: number, R: number;
+      if (narrow) {
+        const room = c.h - ch - 16;
+        cx = c.w / 2; cy = lerp(c.h * 0.5, room / 2, sv);
+        R = lerp(Math.min(c.w * 0.36, c.h * 0.36), Math.min(c.w * 0.36, room * 0.34), sv);
+      } else {
+        const room = c.w - cw - 32;
+        cx = lerp(c.w / 2, room / 2, sv); cy = c.h * 0.5;
+        R = lerp(Math.min(c.w * 0.42, c.h * 0.4), Math.min(room * 0.4, c.h * 0.4), sv);
+      }
+      const hour = ((hand.v % 24) + 24) % 24, [what, why] = wear(hour);
+      const pt = (h: number, r: number): [number, number] => { const a = (h / 24) * 2 * Math.PI - Math.PI / 2; return [cx + Math.cos(a) * r, cy + Math.sin(a) * r]; };
+      const arc = (h0: number, h1: number, r: number) => { const a = pt(h0, r), b = pt(h1, r); return `M${f(a[0])} ${f(a[1])}A${f(r)} ${f(r)} 0 ${h1 - h0 > 12 ? 1 : 0} 1 ${f(b[0])} ${f(b[1])}`; };
+      let s = circle(cx, cy, R, 's-hair') + circle(cx, cy, R * 0.82, 's-hair');
+      for (let h = 0; h < 24; h++) { const a = pt(h, R * 1.03), b = pt(h, R * (h % 6 === 0 ? 1.1 : 1.06)); s += line(a[0], a[1], b[0], b[1], h % 6 === 0 ? 's' : 's-dim'); }
+      for (const h of [0, 6, 12, 18]) { const side = h === 6 ? 1 : h === 18 ? -1 : 0, a = pt(h, side ? R * 1.15 : R * 1.2); s += text(a[0], a[1] + 4, `${pad(h)}:00`, 't-label', `text-anchor="${side > 0 ? 'start' : side < 0 ? 'end' : 'middle'}"`); }
+      // headpiece: the night, then the check (drawn wider than two minutes so it can be seen)
+      const checking = what === 'Headpiece' && hour >= 6 && hour < 7;
+      s += path(arc(22, 29.9, R * 0.82), 's-you', 'stroke-width="5"');
+      s += path(arc(6.05, 6.55, R * 0.82), 's-you', `stroke-width="${checking ? 9 : 5}"`);
+      // headpiece again for the workout, on ordinary days
+      if (gymArc.v > 0.02) s += path(arc(GYM[0], GYM[0] + (GYM[1] - GYM[0]) * clamp(gymArc.v, 0, 1.05), R * 0.82), 's-you', `stroke-width="${what === 'Headpiece' && hour >= 12 ? 9 : 5}"`);
+      // cap: only on a spacewalk day
+      if (capArc.v > 0.02) s += path(arc(9, 9 + 6.5 * clamp(capArc.v, 0, 1.05), R), 's', 'stroke-width="5"');
+      const tip = pt(hour, R), base = pt(hour, R * 0.88); // a short hand between the two rings: clear of the arcs and the centre text
+      const hc = what === 'Nothing' ? 'dim' : what === 'Cap' ? 'fg' : 'you';
+      s += line(base[0], base[1], tip[0], tip[1], hc === 'dim' ? 's-dim' : hc === 'fg' ? 's' : 's-you', 'stroke-width="1.5"') + circle(tip[0], tip[1], 4, `f-${hc}`);
+      const hh = Math.floor(hour), mm = Math.floor((hour - hh) * 60);
+      s += text(cx, cy - 14, `${pad(hh)}:${pad(mm)}`, 't-label', 'text-anchor="middle"');
+      s += text(cx, cy + 12, what, 't-num', `text-anchor="middle" style="font-size:${f(Math.max(18, R * 0.15))}px"`);
+      // the caption must stay inside the inner ring: squeeze it if a small clock leaves too little room
+      const room = 2 * Math.sqrt(Math.max(0, (R * 0.82 - 10) ** 2 - 40 ** 2)), est = why.length * 8.4;
+      if (!(narrow && sv > 0.5)) s += text(cx, cy + 34, why, 't-label', `text-anchor="middle"${est > room ? ` textLength="${f(room)}" lengthAdjust="spacingAndGlyphs"` : ''}`);
+      return s;
     },
   });
 }
@@ -35,6 +108,7 @@ export function c06(sec: HTMLElement) {
   const rail = sec.querySelector<HTMLElement>('.rail')!, tabs = [...rail.querySelectorAll<HTMLButtonElement>('button')];
   const WALK = 0.1; // scroll progress where the walkthrough starts
   let hover: SensorId | null = null, anchors: { id: SensorId; x: number; y: number }[] = [], shown: string | null = '';
+  let checkAt = -1; // time the systems check started
   const jump = (id: SensorId) => scrollToProgress(sec, WALK + ((ids.indexOf(id) + 0.5) / 6) * (1 - WALK), true);
   tabs.forEach((b) => b.addEventListener('click', () => jump(b.dataset.id as SensorId)));
   scene(sec, {
@@ -53,11 +127,15 @@ export function c06(sec: HTMLElement) {
         tabs.forEach((b) => b.setAttribute('aria-current', String(b.dataset.id === show)));
       }
       sec.classList.toggle('walk', side.v > 0.5);
-      rail.style.setProperty('--prog', String(seg(c.p, WALK, 1)));
-      // before the walkthrough each part lifts and reseats in turn, like a systems check
+      // the rail fills one whole step per sensor, never in between
+      rail.style.setProperty('--prog', String(show ? (ids.indexOf(show as SensorId) + 1) / 6 : 0));
+      // when the chapter arrives, each part lifts and reseats in turn, like a systems check.
+      // It runs on a clock, not on scroll, so no part can be left hanging if you stop scrolling.
+      if (c.e < 0.5) checkAt = -1; else if (checkAt < 0) checkAt = c.t;
+      const since = checkAt < 0 ? -1 : c.t - checkAt;
       const lift: Partial<Record<SensorId, number>> = {};
       ids.forEach((id, i) => {
-        const intro = walking ? 0 : Math.sin(seg(c.p, 0.005 + i * 0.008, 0.035 + i * 0.008) * Math.PI) * 0.3;
+        const intro = walking || since < 0 || reduced ? 0 : Math.sin(seg(since, 0.25 + i * 0.14, 0.6 + i * 0.14) * Math.PI) * 0.3;
         lifts[id].set(focus === id ? (id === 'voice' ? 0.22 : id === 'fnirs' ? 0.4 : 0.5) : intro); lift[id] = lifts[id].step(c.dt);
       });
       yaw.set((focus ? FACE[focus] : -14) + (c.inside ? (c.mx / c.w - 0.5) * 12 : 0)); yaw.step(c.dt);
@@ -88,94 +166,14 @@ export function c06(sec: HTMLElement) {
   });
 }
 
-// 08 · We say how we know.
-export function c08(sec: HTMLElement) {
-  const tags = sec.querySelectorAll('.say__card .tag');
-  if (reduced) return;
+// 14 · What the cap cannot see — the four source tags stamp in when the legend arrives.
+export function c14(sec: HTMLElement) {
+  const tags = sec.querySelectorAll('.say .tag');
+  if (reduced || !tags.length) return;
   tags.forEach((t) => ((t as HTMLElement).style.opacity = '0'));
   let done = false;
   new IntersectionObserver((es, io) => {
     if (!es[0].isIntersecting || done) return; done = true; io.disconnect();
-    animate(tags, { opacity: [0, 1], scale: [1.8, 1], rotate: [-8, 0], delay: stagger(170, { start: 250 }), ease: createSpring({ stiffness: 320, damping: 16 }) });
-    animate(sec.querySelectorAll('.say__card'), { translateY: [18, 0], opacity: [0, 1], delay: stagger(90), duration: 500, ease: 'out(3)' });
-  }, { threshold: 0.3 }).observe(sec);
-}
-
-// 09 · For fourteen days, it only listens.
-export function c09(sec: HTMLElement) {
-  const r = rng(11), vals = Array.from({ length: 14 }, () => (r() + r() + r() - 1.5) * 0.9);
-  const gap = new Spring(1, ...SPRING.snap), lockS = new Spring(0, 260, 14);
-  let was = false;
-  scene(sec, {
-    draw(c) {
-      const dF = 1 + seg(c.p, 0.06, 0.78) * 13, day = Math.floor(dF + 0.001), locked = c.p > 0.8;
-      if (locked !== was) { gap.kick(locked ? -6 : 0); was = locked; }
-      gap.set(locked ? 0 : 1 - (day / 14) * 0.72); gap.step(c.dt); lockS.set(locked ? 1 : 0); lockS.step(c.dt);
-      const cy = c.h * 0.5, wide = Math.min(c.h * 0.42, 210), tight = Math.min(c.h * 0.14, 62), H = lerp(tight, wide, gap.v);
-      const x0 = c.w < 720 ? 28 : 64, x1 = c.w - 12, X = (d: number) => lerp(x0 + 30, x1 - 30, (d - 1) / 13), Y = (v: number) => cy - v * tight * 0.62;
-      let s = '';
-      for (let d = 1; d <= 14; d++) s += line(X(d), cy + wide + 14, X(d), cy + wide + (d % 7 === 0 ? 24 : 19), d <= day ? 's-dim' : 's-hair');
-      const cls = locked ? 's-you' : 's';
-      // calipers: a spine and two jaws
-      s += line(x0 - 14, cy - wide - 16, x0 - 14, cy + wide + 16, 's-hair') ;
-      for (const sg of [-1, 1]) {
-        const y = cy + sg * H;
-        s += line(x0 - 22, y, x1, y, cls, 'stroke-width="1.25"') + path(`M${f(x0 - 22)} ${f(y - sg * 0)}L${f(x0 - 22)} ${f(y + sg * 12)}L${f(x0 - 6)} ${f(y + sg * 12)}`, cls, 'stroke-width="1.25"');
-      }
-      if (lockS.v > 0.02) s += `<rect class="band" x="${f(x0 - 22)}" y="${f(cy - H)}" width="${f(x1 - x0 + 22)}" height="${f(2 * H)}" opacity="${f(clamp(lockS.v))}"/>`;
-      const p: [number, number][] = [];
-      for (let d = 1; d <= day; d++) { p.push([X(d), Y(vals[d - 1])]); const fresh = d === day ? clamp((dF - day) * 4 + 0.4) : 1; s += circle(X(d), Y(vals[d - 1]), 3 * fresh + (d === day ? 2 * (1 - fresh) : 0), locked ? 'f-you' : 'f-fg'); }
-      if (p.length > 1) s += path(pts(p), locked ? 's-you' : 's-dim');
-      s += text(x1, cy - wide - 22, locked ? 'Day 14 / 14' : `Day ${pad(day)} / 14 · learning you`, 't-label t-fg', 'text-anchor="end"');
-      if (lockS.v > 0.02) {
-        const k = clamp(lockS.v, 0, 1.3), tw = 178, tx = x1 - tw, ty = cy + H + 14;
-        s += `<g transform="translate(${f(x1)} ${f(ty + 12)}) scale(${f(k)}) translate(${f(-x1)} ${f(-(ty + 12))})"><rect x="${f(tx)}" y="${f(ty)}" width="${tw}" height="24" rx="2" class="f-bg" stroke="var(--you)" stroke-width="1.5"/>${text(tx + 10, ty + 16, 'Locked · your normal', 't-label t-you')}</g>`;
-      } else s += text(x0 - 6, cy + H + 30, 'No alerts yet. It is still measuring you.', 't-label');
-      return s;
-    },
-  });
-}
-
-// 10 · Cap for the big moments. Headband for the rest.
-export function c10(sec: HTMLElement) {
-  const hand = new Spring(0, ...SPRING.soft);
-  let mode: 'day' | 'eva' = 'day', turns = 0, lastA = 0, geo = { cx: 0, cy: 0 };
-  const capArc = new Spring(0, ...SPRING.snap);
-  const btns = [...sec.querySelectorAll<HTMLButtonElement>('[data-mode]')];
-  btns.forEach((b) => b.addEventListener('click', () => { mode = b.dataset.mode as 'day' | 'eva'; btns.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }));
-  const wear = (h: number) => {
-    if (h >= 22 || h < 6) return ['Headband', 'Asleep · sleep stages'];
-    if (h >= 6.5 && h < 6.75) return ['Headband', 'Two-minute morning check'];
-    if (mode === 'eva' && h >= 9 && h < 15.5) return ['Cap', 'Spacewalk'];
-    return ['Nothing', 'Bare head. Nothing to wear.'];
-  };
-  scene(sec, {
-    draw(c) {
-      const cx = c.w / 2, cy = c.h * 0.5, R = Math.min(c.w * 0.42, c.h * 0.4); geo = { cx, cy };
-      let target: number;
-      if (c.inside && Math.hypot(c.mx - cx, c.my - cy) < R * 1.6) {
-        const a = angleAt(cx, cy, c.mx, c.my) + 90; let d = a - lastA; while (d > 180) d -= 360; while (d < -180) d += 360; turns += d; lastA = a; target = turns;
-      } else { target = turns = lerp(20, 380, c.e * 0.5 + c.p * 0.5); lastA = ((turns % 360) + 360) % 360; if (lastA > 180) lastA -= 360; }
-      hand.set(target); hand.step(c.dt);
-      capArc.set(mode === 'eva' ? 1 : 0); capArc.step(c.dt);
-      const ang = ((hand.v % 360) + 360) % 360, hour = (ang / 360) * 24, [what, why] = wear(hour);
-      const pt = (h: number, r: number): [number, number] => { const a = (h / 24) * 2 * Math.PI - Math.PI / 2; return [cx + Math.cos(a) * r, cy + Math.sin(a) * r]; };
-      const arc = (h0: number, h1: number, r: number) => { const a = pt(h0, r), b = pt(h1, r); return `M${f(a[0])} ${f(a[1])}A${f(r)} ${f(r)} 0 ${h1 - h0 > 12 ? 1 : 0} 1 ${f(b[0])} ${f(b[1])}`; };
-      let s = circle(cx, cy, R, 's-hair') + circle(cx, cy, R * 0.82, 's-hair');
-      for (let h = 0; h < 24; h++) { const a = pt(h, R * 1.03), b = pt(h, R * (h % 6 === 0 ? 1.1 : 1.06)); s += line(a[0], a[1], b[0], b[1], h % 6 === 0 ? 's' : 's-dim'); }
-      for (const h of [0, 6, 12, 18]) { const a = pt(h, R * 1.2); s += text(a[0], a[1] + 4, `${pad(h)}:00`, 't-label', 'text-anchor="middle"'); }
-      // headband: sleep and the morning check
-      s += path(arc(22, 30, R * 0.82), 's-you', 'stroke-width="5"') + path(arc(6.4, 6.9, R * 0.82), 's-you', 'stroke-width="5"');
-      // cap: only on the big days
-      if (capArc.v > 0.02) s += path(arc(9, 9 + 6.5 * clamp(capArc.v, 0, 1.05), R), 's', 'stroke-width="5"');
-      const tip = pt(hour, R * 1.0), base = pt(hour, R * 0.3);
-      s += line(base[0], base[1], tip[0], tip[1], what === 'Nothing' ? 's-dim' : what === 'Cap' ? 's' : 's-you', 'stroke-width="1.5"') + circle(tip[0], tip[1], 4, what === 'Nothing' ? 'f-dim' : what === 'Cap' ? 'f-fg' : 'f-you');
-      const hh = Math.floor(hour), mm = Math.floor((hour - hh) * 60);
-      s += text(cx, cy - 14, `${pad(hh)}:${pad(mm)}`, 't-label', 'text-anchor="middle"');
-      s += text(cx, cy + 12, what, 't-num', `text-anchor="middle" font-size="${f(Math.max(18, R * 0.15))}"`);
-      s += text(cx, cy + 34, why, 't-label', 'text-anchor="middle"');
-      return s;
-    },
-  });
-  void geo;
+    animate(tags, { opacity: [0, 1], scale: [1.8, 1], rotate: [-8, 0], delay: stagger(170, { start: 350 }), ease: createSpring({ stiffness: 320, damping: 16 }) });
+  }, { threshold: 0.4 }).observe(sec);
 }

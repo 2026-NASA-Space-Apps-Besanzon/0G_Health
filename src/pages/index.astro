@@ -6,7 +6,7 @@ const S = story();
 const HRP = 'https://www.nasa.gov/hrp/hazards/';
 ---
 <Base>
-  <div class="counter" aria-hidden="true">00 / 15</div>
+  <div class="counter" aria-hidden="true">00 / 10</div>
   <div class="ruler" aria-hidden="true"></div>
 
   <section class="ch in" id="c00" data-ch="c00" style="--len:1.6">
@@ -15,7 +15,7 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
       <div class="ch__head">
         <p class="label rv">Team 0G Health · NASA Space Apps 2026 · Astronaut health self-check</p>
         <h1 class="h rv d1" style="margin-top:18px">Nobody notices a&nbsp;slow change.</h1>
-        <p class="sub rv d2">Baseline is a two-minute daily self-check that learns each astronaut's normal, and flags slow drift weeks before a medical limit.</p>
+        <p class="sub rv d2">Baseline learns each astronaut's normal from a headpiece they sleep in, asks for two minutes each morning, and flags slow drift weeks before a medical limit.</p>
       </div>
     </div>
   </section>
@@ -41,10 +41,11 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
     </div>
   </section>
 
-  <section class="ch" id="c03" data-ch="c03" style="--len:3">
+  <section class="ch" id="c03" data-ch="c03" style="--len:4.5">
     <div class="ch__pin">
       <div class="ch__head">
         <h2 class="h rv">Medical limits are built for everyone. Drift is&nbsp;personal.</h2>
+        <p class="sub rv d1">For the first fourteen days it only listens and learns your normal. After that, it notices changes a medical limit never&nbsp;would.</p>
       </div>
       <div class="stage"></div>
       <p class="src">Illustration, not data</p>
@@ -64,18 +65,18 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
   </section>
 
 
-  <section class="ch" id="c05" data-ch="c05" style="--len:3.5">
+  <section class="ch" id="c05" data-ch="c05" style="--len:6">
     <div class="ch__pin">
       <div class="ch__head">
-        <h2 class="h rv">Two minutes, every&nbsp;morning.</h2>
+        <h2 class="h rv">Sleep in it. Two minutes when you&nbsp;wake.</h2>
+        <p class="sub rv d1">A soft headpiece records the night and your workout. The cap comes out only for&nbsp;spacewalks.</p>
+        <div class="chips rv d2" style="margin-top:18px">
+          <button class="chip" data-mode="day" aria-pressed="true">Ordinary day</button>
+          <button class="chip" data-mode="eva" aria-pressed="false">Spacewalk day</button>
+        </div>
       </div>
-      <div class="stage check">
-        <ol class="check__steps">
-          <li data-step class="on"><span class="label">01</span><b>Wear</b><span>Headband on. Sit still.</span></li>
-          <li data-step><span class="label">02</span><b>Check</b><span>Today against your normal.</span></li>
-          <li data-step><span class="label">03</span><b>Act</b><span>One action. Who to tell.</span></li>
-        </ol>
-        <div class="mc panel" data-s="0">
+      <div class="stage day">
+        <div class="mc panel" aria-hidden="true">
           <div class="mc__top">
             <svg viewBox="0 0 44 44" width="44" height="44" aria-hidden="true">
               <circle cx="22" cy="22" r="18" class="s-hair" stroke-width="3" />
@@ -83,8 +84,14 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
             </svg>
             <div><div class="mono mc__time">0:00</div><div class="label">Morning check · day 104</div></div>
           </div>
+          <ol class="mc__steps label">
+            <li data-step class="on"><b>01</b> Sit</li>
+            <li data-step><b>02</b> Check</li>
+            <li data-step><b>03</b> Act</li>
+          </ol>
+          <p class="mc__hint">Headpiece still on from the night. Sit still for a minute while it takes your resting&nbsp;pulse.</p>
           <div class="mc__rows">
-            <div class="mc__row"><i class="dot dot--drift"></i><span>Sleep</span><b class="mono">6.4 h</b></div>
+            <div class="mc__row"><i class="dot dot--drift"></i><span>Sleep <small>· overnight</small></span><b class="mono">6.4 h</b></div>
             <div class="mc__row"><i class="dot dot--ok"></i><span>Resting pulse</span><b class="mono">54 bpm</b></div>
             <div class="mc__row"><i class="dot dot--ok"></i><span>Heart-rhythm variability</span><b class="mono">66 ms</b></div>
             <div class="mc__row"><i class="dot dot--ok"></i><span>Skin temperature</span><b class="mono">34.6 °C</b></div>
@@ -96,10 +103,9 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
           </div>
         </div>
       </div>
-      <p class="src">Simulated readings</p>
+      <p class="src">Simulated readings · scroll to move through the day</p>
     </div>
   </section>
-
   <section class="ch" id="cap" data-ch="c06" style="--len:8">
     <div class="ch__pin">
       <div class="ch__head">
@@ -132,59 +138,23 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
     </div>
   </section>
 
-  <section class="ch" id="c08" data-ch="c08" style="--len:2">
-    <div class="ch__pin">
-      <div class="ch__head">
-        <h2 class="h rv">We say how we&nbsp;know.</h2>
-        <p class="sub rv d1">Every reading carries one of four tags. No number pretends to be more than it is.</p>
-      </div>
-      <div class="say">
-        <article class="say__card panel"><span class="label">Resting pulse</span><p class="mono say__v">54 <small>bpm</small></p><span class="tag tag--sensed">{TAGS.sensed}</span><p class="say__n">A sensor measured it directly.</p></article>
-        <article class="say__card panel"><span class="label">Alertness</span><p class="mono say__v">72 <small>± 6</small></p><span class="tag tag--ml">{TAGS.ml}</span><p class="say__n">A model's best guess, shown with how sure it is.</p></article>
-        <article class="say__card panel"><span class="label">Eye chart</span><p class="mono say__v">10 <small>lines</small></p><span class="tag tag--you">{TAGS.you}</span><p class="say__n">You did the test. The tool keeps the record.</p></article>
-        <article class="say__card panel"><span class="label">Radiation</span><p class="mono say__v">0.62 <small>mSv/day</small></p><span class="tag tag--ship">{TAGS.ship}</span><p class="say__n">Read from the spacecraft's own instruments.</p></article>
-      </div>
-      <p class="src">Simulated readings</p>
-    </div>
-  </section>
-
-  <section class="ch" id="c09" data-ch="c09" style="--len:3">
-    <div class="ch__pin">
-      <div class="ch__head">
-        <h2 class="h rv">For fourteen days, it only&nbsp;listens.</h2>
-      </div>
-      <div class="stage"></div>
-      <p class="src">Illustration, not data</p>
-    </div>
-  </section>
-
-  <section class="ch" id="c10" data-ch="c10" style="--len:2.2">
-    <div class="ch__pin">
-      <div class="ch__head">
-        <h2 class="h rv">Cap for the big moments. Headband for the&nbsp;rest.</h2>
-        <div class="chips rv d1" style="margin-top:22px">
-          <button class="chip" data-mode="day" aria-pressed="true">Ordinary day</button>
-          <button class="chip" data-mode="eva" aria-pressed="false">Spacewalk day</button>
-        </div>
-      </div>
-      <div class="stage"></div>
-    </div>
-  </section>
-
-  <section class="ch" id="c11" data-ch="c11" style="--len:2.2">
-    <div class="ch__pin">
-      <div class="ch__head">
-        <h2 class="h rv">Days one to three: your head moves, your stomach&nbsp;objects.</h2>
-      </div>
-      <div class="stage"></div>
-      <p class="src">Simulated · space motion sickness: <a href={HRP} target="_blank" rel="noopener">NASA HRP</a></p>
-    </div>
-  </section>
-
   <section class="ch" id="c12" data-ch="c12" style="--len:5">
     <div class="ch__pin">
-      <div class="ch__head">
-        <h2 class="h rv">On a spacewalk, three&nbsp;numbers.</h2>
+      <div class="ch__head split">
+        <div>
+          <h2 class="h rv">On a spacewalk, three&nbsp;numbers.</h2>
+          <p class="sub rv d1">Heat, workload and oxygen. When one leaves your normal, the alert climbs a chain, nearest person first, because Earth is twenty minutes&nbsp;away.</p>
+        </div>
+        <div class="chain rv d2">
+          <p class="label chain__t">Who hears, and when</p>
+          <ol>
+            <li><i></i><b>You</b><span>Your watch taps twice. You act first.</span></li>
+            <li><i></i><b>Partner</b><span>Told next, an arm's length away.</span></li>
+            <li><i></i><b>Habitat</b><span>The crew inside can talk you back to the airlock.</span></li>
+            <li><i></i><b>Earth</b><span>Hears last. The message takes up to 20&nbsp;minutes.</span></li>
+          </ol>
+          <p class="chain__msg label" aria-live="polite">All three inside your normal</p>
+        </div>
       </div>
       <div class="stage"></div>
     </div>
@@ -200,24 +170,38 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
     </div>
   </section>
 
-  <section class="ch ch--paper" id="c14" data-ch="c14" style="--len:2">
+  <section class="ch" id="c14" data-ch="c14" style="--len:2.4">
     <div class="ch__pin">
-      <div class="ch__head">
-        <h2 class="h rv">What the cap cannot&nbsp;see.</h2>
-        <p class="sub rv d1">Three of the biggest long-term risks are out of its reach. The tool still tracks them, and says where each number comes from.</p>
+      <div class="ch__head split">
+        <div>
+          <h2 class="h rv">What it cannot sense,&nbsp;yet.</h2>
+          <p class="sub rv d1">Three of the biggest long-term risks are out of the cap's reach. Here is how the tool tracks them today, and the algorithms we are building to do&nbsp;better.</p>
+        </div>
+        <div class="say rv d2">
+          <p class="label say__t">Every number says where it came from</p>
+          <dl>
+          <div><dt><span class="tag tag--sensed">{TAGS.sensed}</span></dt><dd>A sensor measured it directly.</dd></div>
+          <div><dt><span class="tag tag--ml">{TAGS.ml}</span></dt><dd>A model's best guess, with how sure it is.</dd></div>
+          <div><dt><span class="tag tag--you">{TAGS.you}</span></dt><dd>Measured with a quick test, not a sensor. The tool keeps the record.</dd></div>
+          <div><dt><span class="tag tag--ship">{TAGS.ship}</span></dt><dd>Read from the spacecraft's own instruments.</dd></div>
+          </dl>
+        </div>
       </div>
-      <div class="cant">
+      <div class="next">
         <article class="rv d1">
-          <svg viewBox="0 0 48 48" aria-hidden="true"><path class="s" d="M14 34L34 14M34 14a4 4 0 1 1 6-4a4 4 0 1 1-4 6M14 34a4 4 0 1 1-6 4a4 4 0 1 1 4-6" /></svg>
-          <h3>Bone loss</h3><p>You log loading exercise. Density is scanned before and after the mission.</p><span class="tag tag--you">{TAGS.you}</span>
+          <h3>Bone and muscle loss</h3>
+          <div class="next__row"><span class="label">Today</span><p>You log each workout. Bone density is scanned before and after the mission.</p><span class="tag tag--you">{TAGS.you}</span></div>
+          <div class="next__row next__row--next"><span class="label">Next</span><p>An algorithm that turns the headpiece's motion and pulse during your workout into a daily loading score, so a week of light sessions shows up as drift.</p><span class="tag tag--next">In development</span></div>
         </article>
         <article class="rv d2">
-          <svg viewBox="0 0 48 48" aria-hidden="true"><path class="s" d="M4 24c6-9 13-13 20-13s14 4 20 13c-6 9-13 13-20 13S10 33 4 24z" /><circle class="s" cx="24" cy="24" r="6" /></svg>
-          <h3>Vision change</h3><p>A weekly eye chart on the tablet, each eye.</p><span class="tag tag--you">{TAGS.you}</span>
+          <h3>Vision change</h3>
+          <div class="next__row"><span class="label">Today</span><p>A weekly eye chart on the tablet, each eye.</p><span class="tag tag--you">{TAGS.you}</span></div>
+          <div class="next__row next__row--next"><span class="label">Next</span><p>A contrast and distortion test that compares each eye with its own first weeks in flight, to catch the slow vision changes seen on long missions.</p><span class="tag tag--next">In development</span></div>
         </article>
         <article class="rv d3">
-          <svg viewBox="0 0 48 48" aria-hidden="true"><circle class="s" cx="24" cy="24" r="4" /><path class="s" d="M24 14V5M24 43v-9M14 24H5M43 24h-9M17 17l-6-6M37 37l-6-6M31 17l6-6M11 37l6-6" /></svg>
-          <h3>Radiation</h3><p>Read from the ship's dosimeter, kept as your running total.</p><span class="tag tag--ship">{TAGS.ship}</span>
+          <h3>Radiation</h3>
+          <div class="next__row"><span class="label">Today</span><p>Read from the ship's dosimeter, kept as your running total.</p><span class="tag tag--ship">{TAGS.ship}</span></div>
+          <div class="next__row next__row--next"><span class="label">Next</span><p>Solar-storm mode: when the dosimeter spikes, the shelter checklist opens, and sleep and recovery are watched closely for the days after.</p><span class="tag tag--next">In development</span></div>
         </article>
       </div>
     </div>
@@ -251,39 +235,53 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
 
 <style>
 
-  /* 05 */
-  .check { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 380px) minmax(0, 1fr); gap: clamp(20px, 3vw, 48px); align-items: center; }
-  .check__steps { list-style: none; padding: 0; display: grid; gap: 22px; justify-self: end; width: max-content; max-width: 100%; }
-  .check__steps li { display: grid; grid-template-columns: 34px auto; column-gap: 8px; color: var(--line); transition: color 0.3s; }
-  .check__steps li .label { grid-row: span 2; padding-top: 9px; color: inherit; }
-  .check__steps li b { font-size: clamp(24px, 2.6vw, 36px); font-weight: 600; line-height: 1.1; }
-  .check__steps li span:last-child { font-size: 15px; white-space: nowrap; }
-  .check__steps li.on { color: var(--bone); }
-  .check__steps li.on span:last-child { color: var(--mute); }
-  .mc { padding: 22px; display: grid; gap: 18px; align-self: center; }
+  /* 05 · the day: clock + morning check */
+  .day { touch-action: pan-y; }
+  .mc { position: absolute; z-index: 3; right: 0; top: 0; width: min(380px, 40%); padding: 22px; display: grid; gap: 16px; opacity: 0; pointer-events: none; will-change: opacity, transform; }
   .mc__top { display: flex; gap: 14px; align-items: center; }
   .mc__time { font-size: 28px; line-height: 1; margin-bottom: 4px; }
+  .mc__steps { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .mc__steps li { white-space: nowrap; padding-top: 8px; border-top: 2px solid var(--line); color: var(--mute); transition: color 0.3s, border-color 0.3s; }
+  .mc__steps li b { font-weight: 400; color: inherit; margin-right: 4px; }
+  .mc__steps li.on { color: var(--bone); border-color: var(--you); }
+  .mc__steps li.done { border-color: var(--mute); }
+  .mc__hint { font-size: 15px; color: var(--mute); line-height: 1.4; transition: opacity 0.3s; }
+  .mc__hint.off { opacity: 0; height: 0; margin-top: -16px; overflow: hidden; }
   .mc__rows { display: grid; }
-  .mc__row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line); font-size: 15px; opacity: 0; transform: translateX(-10px); transition: opacity 0.3s, transform 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
+  .mc__row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 15px; opacity: 0; transform: translateX(-10px); transition: opacity 0.3s, transform 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
+  .mc__row small { color: var(--mute); font-size: 13px; }
   .mc__row b { margin-left: auto; font-weight: 400; }
   .mc__row.on { opacity: 1; transform: none; }
-  .mc__act { border-top: 1px solid var(--line); padding-top: 16px; opacity: 0; transform: translateY(10px) scale(0.98); transition: opacity 0.3s, transform 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
+  .mc__act { border-top: 1px solid var(--line); padding-top: 14px; opacity: 0; transform: translateY(10px) scale(0.98); transition: opacity 0.3s, transform 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
   .mc__act.on { opacity: 1; transform: none; }
   .mc__say { font-size: 21px; font-weight: 600; line-height: 1.2; color: var(--drift); }
   .mc__do { margin-top: 6px; font-size: 16px; }
-  .mc__ladder { display: flex; align-items: center; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .mc__ladder { display: flex; align-items: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
   .mc__ladder i { width: 14px; height: 1px; background: var(--mute); }
   .mc__ladder .on { color: var(--bone); }
-  @media (max-width: 980px) {
-    .check { grid-template-columns: 1fr; align-content: start; gap: 16px; }
-    .check__steps { justify-self: start; grid-auto-flow: column; gap: 18px; }
-    .check__steps li { grid-template-columns: auto; }
-    .check__steps li .label, .check__steps li span:last-child { display: none; }
-    .check__steps li b { font-size: 20px; }
-    .mc { padding: 16px; gap: 12px; }
-    .mc__row { padding: 8px 0; }
+  @media (max-width: 900px) { .mc { width: min(340px, 46%); padding: 18px; gap: 12px; } .mc__hint { font-size: 14px; } }
+  @media (max-height: 880px) and (min-width: 641px) {
+    .mc { padding: 16px 18px; gap: 10px; }
+    .mc__time { font-size: 24px; } .mc__top svg { width: 36px; height: 36px; }
+    .mc__hint { font-size: 13.5px; }
+    .mc__row { padding: 6px 0; font-size: 14px; }
+    .mc__act { padding-top: 10px; }
+    .mc__say { font-size: 18px; } .mc__do { font-size: 14.5px; } .mc__ladder { margin-top: 8px; font-size: 10px; }
   }
-  @media (prefers-reduced-motion: reduce) { .mc__row, .mc__act { transition: none; } }
+  @media (max-height: 740px) and (min-width: 641px) { .mc__hint, .mc__row:nth-child(4) { display: none; } }
+  @media (max-width: 640px) {
+    .mc { top: auto; bottom: 0; left: 0; right: 0; width: auto; padding: 14px; gap: 10px; transform: none; }
+    .mc__time { font-size: 22px; }
+    .mc__top svg { width: 34px; height: 34px; }
+    .mc__hint { display: none; }
+    .mc__rows, .mc__act { grid-row: 3; grid-column: 1; }
+    .mc__act { background: var(--ink-2); align-self: start; }
+    .mc:has(.mc__act.on) .mc__row { opacity: 0; }
+    .mc__row { padding: 6px 0; font-size: 14px; }
+    .mc__row:nth-child(n+3) { display: none; }
+    .mc__say { font-size: 17px; } .mc__do { font-size: 14px; } .mc__ladder { margin-top: 8px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .mc__row, .mc__act, .mc__steps li { transition: none; } }
 
   /* 06 · spec sheet */
   #cap .sub { transition: opacity 0.3s; }
@@ -292,7 +290,7 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
   #cap:global(.walk) .rail, #cap:global(.walk) .sds { opacity: 1; }
   .rail { position: absolute; z-index: 3; left: 0; top: 50%; transform: translateY(-50%); display: grid; width: 168px; padding-left: 14px; }
   .rail::before, .rail::after { content: ''; position: absolute; left: 0; top: 0; width: 1px; height: 100%; background: var(--line); }
-  .rail::after { background: var(--you); width: 2px; left: -0.5px; transform-origin: top; transform: scaleY(var(--prog, 0)); }
+  .rail::after { background: var(--you); width: 2px; left: -0.5px; transform-origin: top; transform: scaleY(var(--prog, 0)); transition: transform 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.15); }
   .rail button { display: grid; grid-template-columns: 44px 1fr; align-items: baseline; text-align: left; padding: 11px 0; color: var(--mute); transition: color 0.2s, transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
   .rail button b { font-weight: 500; font-size: 17px; }
   .rail button .label { color: inherit; }
@@ -328,23 +326,57 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
     .sd__sits { display: none !important; } .sd .tag { display: none; }
     .sd li { grid-template-columns: 1fr auto; }
   }
-  @media (prefers-reduced-motion: reduce) { .sd, .rail, .sds, .rail button { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .sd, .rail, .sds, .rail button, .rail::after { transition: none; } }
 
-  /* 08 */
-  .say { flex: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; align-content: center; margin-top: 24px; }
-  .say__card { padding: 22px; display: grid; gap: 14px; justify-items: start; }
-  .say__v { font-size: clamp(34px, 4vw, 54px); line-height: 1; }
-  .say__v small { font-size: 0.42em; color: var(--mute); }
-  .say__n { font-size: 15px; color: var(--mute); }
-  @media (max-width: 900px) { .say { grid-template-columns: 1fr 1fr; gap: 10px; } .say__card { padding: 14px; gap: 9px; } .say__n { display: none; } }
+  /* 12 · the alert chain beside the title (.split is shared with 14) */
+  .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); gap: 20px clamp(24px, 4vw, 64px); align-items: start; }
+  .chain ol { list-style: none; padding: 0; margin-top: 12px; display: grid; position: relative; }
+  .chain ol::before { content: ''; position: absolute; left: 7px; top: var(--a0, 12px); height: var(--span, 0); width: 1px; background: repeating-linear-gradient(var(--line) 0 3px, transparent 3px 7px); }
+  .chain ol::after { content: ''; position: absolute; left: 6.75px; top: var(--a0, 12px); width: 1.5px; height: var(--fill, 0); background: var(--drift); }
+  .chain li { position: relative; display: grid; grid-template-columns: 30px auto; column-gap: 4px; padding: 7px 0; color: var(--mute); transition: color 0.3s; }
+  .chain li i { grid-row: span 2; position: relative; z-index: 1; width: 15px; height: 15px; margin-top: 3px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--ink); transition: border-color 0.15s, transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.6); }
+  .chain li b { font-weight: 600; font-size: 19px; line-height: 1.2; }
+  .chain li span { font-size: 14px; line-height: 1.35; }
+  .chain li.on { color: var(--bone); }
+  .chain li.on i { border-color: var(--drift); background: radial-gradient(circle, var(--drift) 0 3px, var(--ink) 3.5px); }
+  .chain li.on b { color: var(--drift); }
+  .chain li.now i { transform: scale(1.25); }
+  .chain li.now.buzz i { animation: buzz 1.4s infinite; }
+  @keyframes buzz { 0%, 6%, 14%, 20% { translate: 0 0; } 2%, 16% { translate: -1.5px 0; } 4%, 18% { translate: 1.5px 0; } 21%, 100% { translate: 0 0; } }
+  .chain__msg { margin-top: 10px; color: var(--you); min-height: 1.4em; }
+  .chain[data-hot] .chain__msg { color: var(--drift); }
+  @media (max-width: 1000px) {
+    .split { grid-template-columns: 1fr; gap: 12px; }
+    .chain ol { grid-template-columns: repeat(4, 1fr); margin-top: 8px; }
+    .chain ol::before, .chain ol::after { left: var(--a0, 7px); top: 7px; height: 1px; }
+    .chain ol::before { width: var(--span, 0); background: repeating-linear-gradient(90deg, var(--line) 0 3px, transparent 3px 7px); }
+    .chain ol::after { height: 1.5px; width: var(--fill, 0); }
+    .chain li { grid-template-columns: 1fr; padding: 0; row-gap: 6px; }
+    .chain li i { margin: 0; }
+    .chain li b { font-size: 15px; }
+    .chain li span { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .chain li, .chain li i { transition: none; } .chain li.now.buzz i { animation: none; } }
 
-  /* 14 */
-  .cant { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(16px, 4vw, 56px); align-content: center; margin-top: 24px; }
-  .cant article { border-top: 1.5px solid var(--fg); padding-top: 18px; display: grid; gap: 10px; justify-items: start; }
-  .cant svg { width: 44px; height: 44px; }
-  .cant h3 { font-size: clamp(24px, 2.6vw, 36px); font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; }
-  .cant p { color: var(--dim); font-size: 16px; max-width: 30ch; }
-  @media (max-width: 720px) { .cant { grid-template-columns: 1fr; gap: 14px; } .cant svg { display: none; } .cant article { padding-top: 10px; gap: 6px; } .cant p { font-size: 15px; } }
+  /* 14 · today and next */
+  .next { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(16px, 3vw, 44px); align-content: start; margin-top: clamp(20px, 5svh, 56px); }
+  .next article { border-top: 1.5px solid var(--fg); padding-top: 14px; display: grid; gap: 10px; align-content: start; }
+  .next h3 { font-size: clamp(22px, 2.2vw, 32px); font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; }
+  .next__row { display: grid; gap: 8px; justify-items: start; padding: 10px 0 0; border-top: 1px solid var(--line); }
+  .next__row p { color: var(--dim); font-size: 15px; line-height: 1.4; max-width: 36ch; }
+  .next__row--next { border-top-color: var(--you); }
+  .next__row--next .label { color: var(--you); }
+  .next__row--next p { color: var(--bone); }
+  .say { padding-top: 6px; }
+  .say__t { margin-bottom: 12px; }
+  .say dl { display: grid; gap: 9px; margin: 0; }
+  .say div { display: grid; grid-template-columns: 158px 1fr; gap: 12px; align-items: center; }
+  .say dd { margin: 0; font-size: 14px; line-height: 1.35; color: var(--dim); }
+  @media (max-height: 820px) { .next { margin-top: 16px; } .next__row p { font-size: 14px; } .next h3 { font-size: 22px; } }
+  @media (max-height: 680px) { .say, .next__row:not(.next__row--next) { display: none; } .next { margin-top: 12px; } }
+  @media (max-width: 1000px) { .say { padding: 0; } .say__t { margin-bottom: 8px; } .say dl { display: flex; flex-wrap: wrap; gap: 8px; } .say div { display: block; } .say dd { display: none; } }
+  @media (max-width: 900px) { .next { gap: 14px; } .next__row:not(.next__row--next) p { display: none; } }
+  @media (max-width: 720px) { .next { grid-template-columns: 1fr; } .next__row:not(.next__row--next) { display: none; } .next article { padding-top: 10px; gap: 6px; } .next__row { padding-top: 6px; } .say { display: none; } }
 
   /* 15 */
   .end { margin: auto 0; display: grid; justify-items: center; text-align: center; }

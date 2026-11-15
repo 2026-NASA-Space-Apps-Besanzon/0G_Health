@@ -59,6 +59,7 @@ svg { display: block; overflow: visible; }
 .t-label { fill: var(--dim); }
 .t-fg { fill: var(--fg); } .t-you { fill: var(--you); } .t-drift { fill: var(--drift); } .t-limit { fill: var(--limit); }
 .t-num { font-family: var(--mono); font-variant-numeric: tabular-nums; fill: var(--fg); }
+.t-num.t-you { fill: var(--you); } .t-num.t-drift { fill: var(--drift); } .t-num.t-limit { fill: var(--limit); }
 
 /* ---------- chrome ---------- */
 .nav {
@@ -146,3 +147,4 @@ svg { display: block; overflow: visible; }
   .rv { transition: none; opacity: 1; transform: none; }
   .btn, .chip { transition: none; }
 }
+.tag--next { border-style: solid; border-color: var(--you); color: var(--you); }

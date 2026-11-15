@@ -1,53 +1,17 @@
-// Chapters 11–15: scenarios, trust, action.
-import { scene, Spring, SPRING, reduced, clamp, lerp, seg, f, pts, path, line, circle, text, pad, wob, dot } from '../lib/motion';
-import { renderCap } from '../lib/iso';
-
-// 11 · Days one to three: your head moves, your stomach objects.
-export function c11(sec: HTMLElement) {
-  const yaw = new Spring(0, ...SPRING.loose);
-  const buf: number[] = new Array(160).fill(0);
-  let score = 0, acc = 0;
-  scene(sec, {
-    draw(c) {
-      const small = c.w < 720;
-      const auto = !c.inside || reduced;
-      // the face turns toward the cursor (negative yaw turns it to the viewer's right)
-      yaw.set(auto ? Math.sin(c.t * 0.7) * 22 : -(c.mx / c.w - 0.5) * 130);
-      const before = yaw.v; yaw.step(c.dt);
-      const rate = c.dt > 0 ? Math.abs(yaw.v - before) / c.dt : 0;
-      acc += c.dt; if (acc > 0.033) { acc = 0; buf.push(-(yaw.v - before) / Math.max(c.dt, 0.001)); buf.shift(); } // up = turning toward the right, like the cursor
-      score = clamp(score + (rate > 60 ? (rate - 60) * 0.006 : -1.1) * c.dt, 0.8, 10);
-      const cx = small ? c.w / 2 : c.w * 0.26, cy = small ? c.h * 0.3 : c.h * 0.52, scale = Math.min(c.w * (small ? 0.3 : 0.18), c.h * (small ? 0.22 : 0.34));
-      // seen from the front, at eye level: the face opening points at you and the head shakes left and right
-      let s = renderCap({ cx, cy, scale, yaw: yaw.v - 45, only: 'imu', labels: 'none', el: 14, shellOpacity: 0.85 }).svg;
-      // yaw axis
-      s += line(cx, cy - scale * 1.55, cx, cy - scale * 1.2, 's-dim', 'stroke-dasharray="2 4"') + path(`M${f(cx - 16)} ${f(cy - scale * 1.5)}a16 6 0 1 0 32 0`, 's-dim') + path(`M${f(cx + 16)} ${f(cy - scale * 1.5)}l-1 -7M${f(cx + 16)} ${f(cy - scale * 1.5)}l-7 1`, 's-dim');
-      // trace
-      const x0 = small ? 0 : c.w * 0.5, x1 = c.w, ty = small ? c.h * 0.7 : c.h * 0.4, amp = small ? c.h * 0.12 : c.h * 0.2;
-      s += line(x0, ty, x1, ty, 's-hair');
-      const p: [number, number][] = buf.map((v, i) => [lerp(x0, x1, i / (buf.length - 1)), ty - clamp(v / 420, -1, 1) * amp]);
-      const st = score > 6 ? 'limit' : score > 3.2 ? 'drift' : 'ok';
-      s += path(pts(p), st === 'ok' ? 's-you' : st === 'drift' ? 's-drift' : 's-limit', 'stroke-width="2"');
-      s += text(x0, ty - amp - 14, `Head turn rate  ${pad(rate, 3)} °/s`, 't-label t-fg') + text(x1, ty - amp - 14, 'IMU · sensed', 't-label', 'text-anchor="end"');
-      // risk bar
-      const by = ty + amp + (small ? 26 : 44), bw = x1 - x0;
-      s += line(x0, by, x1, by, 's-hair', 'stroke-width="6"') + line(x0, by, x0 + bw * (score / 10), by, st === 'ok' ? 's-you' : st === 'drift' ? 's-drift' : 's-limit', 'stroke-width="6" stroke-linecap="butt"');
-      s += line(x0 + bw * 0.6, by - 9, x0 + bw * 0.6, by + 9, 's-limit');
-      s += dot(x0 + 6, by + 30, st) + text(x0 + 20, by + 34, `Motion sickness risk  ${score.toFixed(1)} / 10`, 't-label t-fg');
-      s += text(x0 + 20, by + 54, st === 'limit' ? 'Slow down. Turn your whole body.' : st === 'drift' ? 'Easy. Your inner ear is still adapting.' : c.inside ? 'Now shake your head, fast' : 'Move your cursor to turn the head', `t-label ${st === 'limit' ? 't-limit' : st === 'drift' ? 't-drift' : ''}`);
-      return s;
-    },
-  });
-}
+// Chapters 12–15: spacewalk, privacy, the end.
+import { scene, reduced, clamp, lerp, seg, f, pts, path, line, circle, text, pad, wob } from '../lib/motion';
 
 // 12 · On a spacewalk, three numbers.
 export function c12(sec: HTMLElement) {
+  const chainEl = sec.querySelector<HTMLElement>('.chain')!, chainOl = chainEl.querySelector<HTMLElement>('ol')!;
+  const steps = [...chainEl.querySelectorAll<HTMLElement>('li')], msgEl = chainEl.querySelector<HTMLElement>('.chain__msg')!;
+  const dots = steps.map((li) => li.querySelector<HTMLElement>('i')!), flatQ = matchMedia('(max-width: 1000px)');
   scene(sec, {
     draw(c) {
       const t = seg(c.p, 0.05, 0.92), mins = t * 390, small = c.w < 720;
       const heat = (t < 0.42 ? 34.6 + 1.42 * (t / 0.42) : 36.02 + 0.9 * seg(t, 0.42, 1)) + wob(t * 9) * 0.015, load = 0.4 + 0.28 * t + wob(t * 14, 3) * 0.03, ox = 97.4 - 1.7 * Math.pow(t, 2) + wob(t * 11, 5) * 0.15;
       const hot = t >= 0.42;
-      const n = 3, gw = c.w / n, R = Math.min(gw * 0.36, c.h * 0.24), gy = c.h * (small ? 0.36 : 0.4);
+      const n = 3, gw = c.w / n, R = Math.min(gw * 0.36, c.h * 0.3), gy = c.h * 0.48;
       const g = (i: number, label: string, tagTxt: string, v: number, lo: number, hi: number, b0: number, b1: number, val: string, st: string) => {
         const cx = gw * (i + 0.5), A0 = -210, A1 = 30, a = (x: number) => ((lerp(A0, A1, clamp((x - lo) / (hi - lo))) * Math.PI) / 180);
         const P = (x: number, r: number) => [cx + Math.cos(a(x)) * r, gy + Math.sin(a(x)) * r];
@@ -66,26 +30,21 @@ export function c12(sec: HTMLElement) {
       s += g(0, 'Heat', 'Skin temp · sensed', heat, 33.5, 37.5, 34.2, 36.0, heat.toFixed(1) + '°', hot ? 'drift' : 'ok');
       s += g(1, 'Workload', 'fNIRS · estimated · future', load, 0, 1, 0.25, 0.75, load.toFixed(2), 'ok');
       s += g(2, 'Oxygen', 'PPG · sensed', ox, 90, 100, 95, 99, ox.toFixed(0) + '%', 'ok');
-      // who hears first
-      const ry = c.h - 34, nodes = ['You', 'Partner', 'Habitat', small ? 'Earth' : 'Earth · 20 min later'], x0 = small ? 16 : c.w * 0.12, x1 = c.w - (small ? 16 : c.w * 0.12);
-      // the alert walks the chain with the scroll: one stop at a time
-      const prog = seg(t, 0.42, 0.96) * 3.4, at = !hot ? -1 : prog >= 3.3 ? 4 : prog > 2.05 ? 3 : Math.min(2, Math.floor(prog / 0.8 + 0.01));
-      s += line(x0, ry, x1, ry, 's-hair', 'stroke-dasharray="2 6"');
-      // the line reaches each stop exactly as it lights; the last leg to Earth crawls
-      const reach = prog < 1.6 ? prog / 2.4 : 2 / 3 + seg(prog, 1.6, 3.3) / 3;
-      if (hot) s += line(x0, ry, lerp(x0, x1, reach), ry, 's-drift', 'stroke-width="1.5"');
-      nodes.forEach((nm, i) => {
-        const x = lerp(x0, x1, i / 3), on = i === 3 ? prog >= 3.3 : prog > i * 0.8 - 0.01 && hot;
-        // the wearer feels it first: the watch taps twice, every 1.4 s, while the alert is still theirs
-        if (i === 0 && on && at === 0) {
-          const tt = c.t % 1.4, buzz = tt < 0.09 || (tt > 0.2 && tt < 0.29), jx = buzz && !reduced ? Math.sin(c.t * 290) * 1.6 : 0;
-          if (buzz || reduced) for (const sd of [-1, 1]) for (let k = 0; k < 2; k++) { const rr = 12 + k * 6; s += path(`M${f(x + sd * rr * 0.6 + jx)} ${f(ry - rr * 0.8)}Q${f(x + sd * rr + jx)} ${f(ry)} ${f(x + sd * rr * 0.6 + jx)} ${f(ry + rr * 0.8)}`, 's-drift', `stroke-width="1.5" opacity="${1 - k * 0.35}"`); }
-        }
-        s += circle(x, ry, 7, 'f-bg') + circle(x, ry, on ? 6 : 5, on ? 's-drift' : 's-hair', 'stroke-width="1.5"') + (on ? circle(x, ry, 2.5, 'f-drift') : '');
-        s += text(x, ry - 16, nm, `t-label ${on ? 't-drift' : ''}`, `text-anchor="${i === 0 ? 'start' : i === 3 ? 'end' : 'middle'}"`);
+      // who hears first: the chain lives beside the title; the scroll walks the alert along it.
+      // u counts stops: 0 You, 1 Partner, 2 Habitat, 3 Earth. A dot lights the moment the line reaches it.
+      const prog = seg(t, 0.42, 0.96), u = !hot ? 0 : prog < 0.5 ? prog / 0.25 : 2 + seg(prog, 0.5, 0.9);
+      const at = !hot ? -1 : u >= 3 ? 3 : u > 2.02 ? 2.5 : Math.floor(u + 0.001);
+      chainEl.toggleAttribute('data-hot', hot);
+      // measure where the dots really are, so the line ends exactly on them
+      const across = flatQ.matches, cs = dots.map((d, i) => (across ? steps[i].offsetLeft + d.offsetLeft + d.offsetWidth / 2 : steps[i].offsetTop + d.offsetTop + d.offsetHeight / 2));
+      const k = Math.min(2, Math.floor(u)), fill = hot ? lerp(cs[k], cs[k + 1], clamp(u - k)) - cs[0] : 0;
+      chainOl.style.setProperty('--a0', `${f(cs[0])}px`); chainOl.style.setProperty('--span', `${f(cs[3] - cs[0])}px`); chainOl.style.setProperty('--fill', `${f(fill)}px`);
+      steps.forEach((li, i) => {
+        const on = hot && u >= i - 0.001;
+        li.classList.toggle('on', on); li.classList.toggle('now', on && at === i); li.classList.toggle('buzz', i === 0 && at === 0);
       });
-      const msg = ['Heat has left your normal · you feel the watch vibrate', 'Your spacewalk partner is told next', 'Then the crew inside the habitat', 'The message is still on its way to Earth', 'Earth hears last, 20 minutes later'][at] ?? 'All three inside your normal';
-      s += text(c.w / 2, ry + 26, small && at >= 0 ? msg.split(' · ').pop()! : msg, `t-label ${hot ? 't-drift' : 't-you'}`, 'text-anchor="middle"');
+      const msg = !hot ? 'All three inside your normal' : at === 0 ? 'Heat has left your normal · your watch vibrates' : at === 1 ? 'Not acknowledged · your partner is told' : at === 2 ? 'Then the crew inside the habitat' : at === 2.5 ? 'The message is still on its way to Earth' : 'Earth hears last, 20 minutes later';
+      if (msgEl.textContent !== msg) msgEl.textContent = msg;
       return s;
     },
   });

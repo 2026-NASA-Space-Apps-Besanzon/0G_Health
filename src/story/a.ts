@@ -1,5 +1,5 @@
 // Chapters 00–04: the problem and the proof.
-import { scene, Spring, SPRING, reduced, clamp, lerp, seg, easeOut, easeInOut, f, pts, path, line, circle, text, pad, wob, dot, scrollToProgress } from '../lib/motion';
+import { scene, Spring, SPRING, reduced, clamp, lerp, seg, easeOut, easeInOut, f, pts, path, line, circle, text, pad, wob, dot, rng, scrollToProgress } from '../lib/motion';
 import { dial, angleAt, angleDelta } from '../lib/dial';
 import { story, series, analyse, reading, LEARN, type Status } from '../lib/sim';
 import { Watch, WATCH, type Src } from '../lib/watch';
@@ -99,34 +99,85 @@ export function c02(sec: HTMLElement) {
 }
 
 // 03 · Medical limits are built for everyone. Drift is personal.
+// One scroll, three beats: the wide range for everyone → fourteen days of listening squeeze it to your normal → a drift that is fine for everyone but not for you.
 export function c03(sec: HTMLElement) {
-  const hw = new Spring(1, ...SPRING.soft), lift = new Spring(0, ...SPRING.soft);
+  const r = rng(11), vals = Array.from({ length: 14 }, () => (r() + r() + r() - 1.5) * 0.9);
+  // the days after the lock come from the same distribution, so day 15 looks exactly like day 14 did
+  const r2 = rng(23), more = Array.from({ length: 60 }, () => (r2() + r2() + r2() - 1.5) * 0.9);
+  const gap = new Spring(1, ...SPRING.snap), lockS = new Spring(0, 260, 14);
+  let was = false;
   scene(sec, {
     draw(c) {
-      const mine = c.p > 0.36, drifted = c.p > 0.7;
-      hw.set(mine ? 0 : 1); hw.step(c.dt); lift.set(drifted ? 1 : 0); lift.step(c.dt);
-      const cy = c.h * 0.52, wide = Math.min(c.h * 0.36, 190), tight = 24, H = lerp(tight, wide, hw.v);
-      const p: [number, number][] = [], q: [number, number][] = [];
-      const xs = c.w * 0.7;
-      for (let x = 0; x <= c.w; x += 6) {
-        const up = lift.v * easeOut(seg(x, xs, c.w)) * 62;
-        (x <= xs + 3 ? p : q).push([x, cy + wob(x * 0.021, 2) * 13 - up]);
-        if (x > xs - 3 && x <= xs + 3) q.push(p[p.length - 1]);
-      }
+      const small = c.w < 720;
+      const dF = 1 + seg(c.p, 0.05, 0.4) * 13, day = Math.floor(dF + 0.001), locked = c.p > 0.44;
+      if (locked !== was) { gap.kick(locked ? -6 : 0); was = locked; }
+      gap.set(locked ? 0 : 1 - (day / 14) * 0.72); gap.step(c.dt); lockS.set(locked ? 1 : 0); lockS.step(c.dt);
+      const cy = c.h / 2 - 12, wide = Math.min(c.h * 0.34, 190), tight = clamp(c.h * 0.1, 18, 40), H = lerp(tight, wide, gap.v);
+      const x0 = 0, x1 = c.w, xs = lerp(x0, x1, small ? 0.5 : 0.4);
+      const X = (d: number) => lerp(x0 + 16, xs - 10, (d - 1) / 13);
+      // keep the same day spacing after the lock as before it
+      const step = (X(14) - X(1)) / 13, POST = clamp(Math.round((x1 - 12 - X(14)) / step), 14, 44);
+      const dPost = 14 + seg(c.p, 0.5, 0.9) * POST;
+      const XP = (d: number) => X(14) + (d - 14) * step;
+      const Y = (v: number) => cy - v * tight * 0.62;
+      const rise = (d: number) => easeInOut(seg((d - 14) / POST, 0.42, 0.92)) * Math.min(tight * 2.1, wide * 0.55);
+      const YP = (d: number) => (d <= 14 ? Y(vals[13]) : Y(more[d - 15]) - rise(d));
       let s = '';
-      s += line(0, cy - wide, c.w, cy - wide, 's-hair', 'stroke-dasharray="6 6"') + line(0, cy + wide, c.w, cy + wide, 's-hair', 'stroke-dasharray="6 6"');
-      s += text(0, cy - wide - 10, 'Healthy range · everyone', 't-label');
-      s += `<rect class="band" x="0" y="${f(cy - H)}" width="${f(c.w)}" height="${f(2 * H)}" opacity="${f(1 - clamp(hw.v))}"/>`;
-      const cls = mine ? 's-you' : 's-dim';
-      s += line(0, cy - H, c.w, cy - H, cls, 'stroke-width="1.25"') + line(0, cy + H, c.w, cy + H, cls, 'stroke-width="1.25"');
-      if (mine && hw.v < 0.3) s += text(0, cy + H + 20, 'Your normal', 't-label t-you');
-      s += path(pts(p), 's-you') + path(pts(q), lift.v > 0.45 ? 's-drift' : 's-you');
-      const ex = c.w - 6, ey = q[q.length - 1][1];
-      s += dot(ex - 2, ey, lift.v > 0.45 ? 'drift' : 'ok', 6);
-      if (lift.v > 0.6) {
-        s += text(ex - 16, ey - 18, 'Fine for everyone', 't-label', 'text-anchor="end"');
-        s += text(ex - 16, ey - 34, 'Not normal for you', 't-label t-drift', 'text-anchor="end"');
+      // everyone: the wide medical range
+      s += line(x0, cy - wide, x1, cy - wide, 's-hair', 'stroke-dasharray="6 6"') + line(x0, cy + wide, x1, cy + wide, 's-hair', 'stroke-dasharray="6 6"');
+      s += text(x0, cy - wide - 10, 'Healthy range · everyone', 't-label');
+      // you: the band closes in like calipers while it listens
+      const cls = locked ? 's-you' : 's';
+      if (lockS.v > 0.02) s += `<rect class="band" x="${f(x0)}" y="${f(cy - H)}" width="${f(x1 - x0)}" height="${f(2 * H)}" opacity="${f(clamp(lockS.v))}"/>`;
+      for (const sg of [-1, 1]) s += line(x0, cy + sg * H, x1, cy + sg * H, cls, 'stroke-width="1.25"');
+      // day ticks for the learning fortnight
+      for (let d = 1; d <= 14; d++) s += line(X(d), cy + wide + 14, X(d), cy + wide + (d % 7 === 0 ? 24 : 19), d <= day ? 's-dim' : 's-hair');
+      s += text(X(1), cy + wide + 40, 'Days 1–14 · listening', 't-label');
+      // the learning dots
+      const p: [number, number][] = [];
+      for (let d = 1; d <= day; d++) {
+        p.push([X(d), Y(vals[d - 1])]);
+        const fresh = d === day && !locked ? clamp((dF - day) * 4 + 0.4) : 1;
+        s += circle(X(d), Y(vals[d - 1]), 3 * fresh + (d === day && !locked ? 2 * (1 - fresh) : 0), locked ? 'f-you' : 'f-fg');
       }
+      if (p.length > 1) s += path(pts(p), locked ? 's-you' : 's-dim');
+      // after the lock: the same daily readings keep coming, then drift out of your band while staying inside everyone's
+      let ex = X(14), ey = Y(vals[13]), out = false, yTop = ey;
+      if (dPost > 14.02) {
+        const top = cy - H, bot = cy + H, isOut = (y: number) => y < top || y > bot;
+        const segs: { out: boolean; pts: [number, number][] }[] = [{ out: false, pts: [[X(14), Y(vals[13])]] }];
+        const dots: [number, number][] = [];
+        let prev: [number, number] = [X(14), Y(vals[13])];
+        const last = Math.floor(dPost), frac = dPost - last;
+        const stops: [number, number][] = [];
+        for (let d = 15; d <= last; d++) stops.push([XP(d), YP(d)]);
+        if (frac > 0.001 && last < 14 + POST) stops.push([lerp(XP(last), XP(last + 1), frac), lerp(YP(last), YP(last + 1), frac)]);
+        stops.forEach((q, i) => {
+          const cur = segs[segs.length - 1];
+          if (isOut(q[1]) !== cur.out) {
+            // split at the exact crossing of the band edge
+            const edge = q[1] < top || prev[1] < top ? top : bot, t = (edge - prev[1]) / (q[1] - prev[1]);
+            const xc: [number, number] = [lerp(prev[0], q[0], t), edge];
+            cur.pts.push(xc); segs.push({ out: !cur.out, pts: [xc] });
+          }
+          segs[segs.length - 1].pts.push(q); prev = q; yTop = Math.min(yTop, q[1]);
+          if (i < last - 14) dots.push(q);
+        });
+        for (const g of segs) if (g.pts.length > 1) s += path(pts(g.pts), g.out ? 's-drift' : 's-you');
+        for (const q of dots) s += circle(q[0], q[1], 2.4, isOut(q[1]) ? 'f-drift' : 'f-you');
+        [ex, ey] = prev; out = isOut(ey);
+        s += dot(ex, ey, out ? 'drift' : 'ok', 5);
+      }
+      if (out && rise(dPost) > tight * 1.4) {
+        s += text(ex, yTop - 12, 'Fine for everyone', 't-label', 'text-anchor="end"');
+        s += text(ex, yTop - 28, 'Not normal for you', 't-label t-drift', 'text-anchor="end"');
+      }
+      // status line
+      s += text(x1, cy - wide - 10, !locked ? `Day ${pad(day)} / 14 · learning you` : dPost > 14.02 ? `Day ${pad(Math.floor(dPost))} · watching` : 'Day 14 / 14', 't-label t-fg', 'text-anchor="end"');
+      if (lockS.v > 0.02) {
+        const k = clamp(lockS.v, 0, 1.3), tw = 178, tx = Math.max(x0, xs - tw), ty = cy + H + 14;
+        s += `<g transform="translate(${f(tx + tw)} ${f(ty + 12)}) scale(${f(k)}) translate(${f(-(tx + tw))} ${f(-(ty + 12))})"><rect x="${f(tx)}" y="${f(ty)}" width="${tw}" height="24" rx="2" class="f-bg" stroke="var(--you)" stroke-width="1.5"/>${text(tx + 10, ty + 16, 'Locked · your normal', 't-label t-you')}</g>`;
+      } else s += text(x0 + 4, cy + H - 12, 'No alerts yet. It is still measuring you.', 't-label');
       return s;
     },
   });
