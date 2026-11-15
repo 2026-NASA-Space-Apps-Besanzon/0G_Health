@@ -4,6 +4,8 @@ import { SENSORS, TAGS } from '../data/sensors';
 import { story } from '../lib/sim';
 const S = story();
 const HRP = 'https://www.nasa.gov/hrp/hazards/';
+import { TEAM, CHALLENGE as CH } from '../data/team';
+const CHALLENGE = CH.url;
 ---
 <Base>
   <div class="counter" aria-hidden="true">00 / 10</div>
@@ -13,9 +15,14 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
     <div class="ch__pin">
       <div class="stage stage--bleed"></div>
       <div class="ch__head">
-        <p class="label rv">Team 0G Health · NASA Space Apps 2026 · Astronaut health self-check</p>
+        <p class="label rv">Baseline · Astronaut health self-check</p>
         <h1 class="h rv d1" style="margin-top:18px">Nobody notices a&nbsp;slow change.</h1>
         <p class="sub rv d2">Baseline learns each astronaut's normal from a headpiece they sleep in, asks for two minutes each morning, and flags slow drift weeks before a medical limit. If you cannot answer an alarm, it calls the doctor on&nbsp;board.</p>
+        <div class="team rv d3">
+          <p class="label">Designed for the NASA Space Apps Challenge 2026</p>
+          <a class="team__ch" href={CHALLENGE} target="_blank" rel="noopener"><span class="label">Challenge</span><span>Health Monitoring Software for Astronauts on Space&nbsp;Missions&nbsp;<span aria-hidden="true">↗</span></span></a>
+          <div class="team__who"><span class="label">Team 0G Health</span><ul>{TEAM.map((n) => <li>{n}</li>)}</ul></div>
+        </div>
       </div>
     </div>
   </section>
@@ -228,10 +235,6 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
         <p class="sub rv d1">Fit the headpiece, check the sensors and take the reaction test yourself. Then follow one simulated crew member for 180 days, with the weekly report and every source behind the&nbsp;numbers.</p>
         <p class="rv d2 end__cta"><a class="btn" href="/app">Open the tool <span aria-hidden="true">→</span></a><a class="chip end__alt" href="/app#check">Try the morning check</a><a class="chip end__alt" href="/bone-muscle">Bone and muscle model</a><a class="chip end__alt" href="/app#sources">Sources and limits</a></p>
       </div>
-      <footer class="foot label">
-        <span>Baseline by team 0G Health · NASA Space Apps Challenge 2026 · Morning check, doctor call and weekly report from Mamadou's prototype · bone and muscle model by Nourchene</span>
-        <span>A prototype. All data simulated. Not a medical device.</span>
-      </footer>
     </div>
   </section>
 
@@ -394,10 +397,25 @@ const HRP = 'https://www.nasa.gov/hrp/hazards/';
   /* 15 */
   .end { margin: auto 0; display: grid; justify-items: center; text-align: center; }
   .end .h { max-width: 14ch; }
+  /* credit: the event, the challenge, the team. Three rows split by hairlines */
+  .team { margin-top: clamp(28px, 4vh, 44px); max-width: 520px; display: grid; border-top: 1px solid var(--line); }
+  .team > * { padding: 12px 0; }
+  .team > * + * { border-top: 1px solid var(--line); }
+  .team .label { display: block; }
+  .team__ch { display: grid; gap: 6px; text-decoration: none; color: var(--bone); font-size: clamp(17px, 1.35vw, 20px); font-weight: 500; line-height: 1.25; letter-spacing: -0.005em; text-wrap: balance; }
+  .team__ch span[aria-hidden] { color: var(--you); }
+  .team__ch:hover { color: var(--you); }
+  .team__who { display: grid; gap: 8px; }
+  .team__who .label { color: var(--you); }
+  .team__who ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 20px; font-size: 16px; color: var(--bone); }
+  /* wide screens: the credit sits on the right, level with the bottom of the intro */
+  @media (min-width: 1100px) {
+    .team { position: absolute; right: 0; bottom: 4px; width: min(440px, 32vw); margin: 0; }
+  }
+  @media (max-width: 400px) { .team__who ul { font-size: 15px; gap: 3px 14px; } }
   .end__cta { margin-top: 34px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; }
   .end__alt { color: var(--bone); border-color: var(--line); }
   .next__more { color: var(--you); text-underline-offset: 3px; white-space: nowrap; pointer-events: auto; }
-  .foot { display: flex; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; position: relative; z-index: 2; padding-left: 0; }
   .h--two span { color: #56565b; transition: color 0.35s ease; }
   .h--two span:global(.lit) { color: var(--bone); }
 </style>

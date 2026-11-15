@@ -134,6 +134,23 @@ svg { display: block; overflow: visible; }
 
 .panel { background: var(--ink-2); border: 1px solid var(--line); border-radius: 10px; }
 
+/* ---------- footer, every page ---------- */
+.site-foot { position: relative; z-index: 5; background: var(--ink); border-top: 1px solid var(--line); padding: clamp(40px, 6vw, 64px) var(--gutter) 24px; }
+body:has(.ch) .site-foot { padding-left: calc(var(--gutter) + var(--rail)); } /* the story page keeps its left rail */
+@media (min-width: 721px) { .site-foot { z-index: 21; } } /* covers the story's fixed counter and ruler, which phones hide anyway */
+.site-foot__grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1fr); gap: 32px 40px; max-width: 1500px; margin: 0 auto; }
+.site-foot__brand { display: grid; gap: 14px; align-content: start; }
+.site-foot__brand .nav__mark { text-decoration: none; justify-self: start; }
+.site-foot__brand p { color: var(--mute); font-size: 15px; line-height: 1.5; max-width: 34ch; }
+.site-foot ul { list-style: none; padding: 0; display: grid; gap: 8px; margin-top: 14px; font-size: 15px; line-height: 1.35; }
+.site-foot a { text-decoration: none; color: var(--bone); }
+.site-foot a:hover { color: var(--you); }
+.site-foot__dim { color: var(--mute); }
+.site-foot__team { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; }
+.site-foot__base { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 24px; max-width: 1500px; margin: clamp(32px, 5vw, 52px) auto 0; padding-top: 18px; border-top: 1px solid var(--line); }
+@media (max-width: 1000px) { .site-foot__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .site-foot__grid { grid-template-columns: 1fr; gap: 28px; } }
+
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
   font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; text-decoration: none;

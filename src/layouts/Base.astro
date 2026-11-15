@@ -4,6 +4,7 @@ import '@fontsource/barlow/500.css';
 import '@fontsource/barlow/600.css';
 import '@fontsource-variable/geist-mono';
 import '../styles/global.css';
+import { TEAM, TEAM_NAME, CHALLENGE } from '../data/team';
 interface Props { title?: string; description?: string }
 const { title, description = 'A headpiece you sleep in and a two-minute morning check that learn each astronaut\'s normal and flag slow drift weeks before a medical limit.' } = Astro.props;
 ---
@@ -30,5 +31,42 @@ const { title, description = 'A headpiece you sleep in and a two-minute morning 
       </nav>
     </header>
     <main id="main"><slot /></main>
+    <footer class="site-foot">
+      <div class="site-foot__grid">
+        <div class="site-foot__brand">
+          <a class="nav__mark" href="/" aria-label="Baseline, home">
+            <svg viewBox="0 0 26 12" aria-hidden="true"><path d="M1 5h7l4 5 4-3h9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            Baseline
+          </a>
+          <p>A health self-check for long missions. It learns each astronaut's normal and flags slow drift weeks before a medical limit.</p>
+        </div>
+        <nav aria-label="Footer">
+          <p class="label">Explore</p>
+          <ul>
+            <li><a href="/">The story</a></li>
+            <li><a href="/app">The tool</a></li>
+            <li><a href="/app#check">Morning check</a></li>
+            <li><a href="/bone-muscle">Bone and muscle model</a></li>
+            <li><a href="/app#sources">Sources and limits</a></li>
+          </ul>
+        </nav>
+        <div>
+          <p class="label">Challenge</p>
+          <ul>
+            <li><a href={CHALLENGE.url} target="_blank" rel="noopener">{CHALLENGE.name}&nbsp;<span aria-hidden="true">↗</span></a></li>
+            <li class="site-foot__dim">{CHALLENGE.event}</li>
+            <li class="site-foot__dim">{CHALLENGE.local}</li>
+          </ul>
+        </div>
+        <div>
+          <p class="label">{TEAM_NAME}</p>
+          <ul class="site-foot__team">{TEAM.map((n) => <li>{n}</li>)}</ul>
+        </div>
+      </div>
+      <div class="site-foot__base label">
+        <span>Prototype · all data simulated · not a medical device</span>
+        <span>© 2026 {TEAM_NAME}</span>
+      </div>
+    </footer>
   </body>
 </html>

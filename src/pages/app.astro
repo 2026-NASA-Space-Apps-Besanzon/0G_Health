@@ -33,6 +33,7 @@ import Base from '../layouts/Base.astro';
           <span class="hap__k hap__c"><span class="hap__i"><i class="c"></i></span><span>Each colour is one vital · <em>green ring</em> your normal · <em class="r">red line</em> the limit</span></span>
         </div>
         <button class="chip hap__phone" hidden aria-pressed="false">Also vibrate this phone</button>
+        <a class="label watch__cr" href="#credits">Alerts and doctor call by Mamadou</a>
       </section>
 
       <section class="now panel" aria-live="polite">
@@ -133,12 +134,16 @@ import Base from '../layouts/Base.astro';
             <li>The reaction test normal of 200 to 350 ms, the SpO2 normal of 95 % or more and the alpha rhythm of 8 to 12 Hz are general adult values, not calibrated on crew data.</li>
             <li>No diagnosis, no prediction of heart events and no reading of emotions from the voice.</li>
           </ul>
-          <p class="label">Morning check, call and weekly report from Mamadou's prototype · bone and muscle models from Nourchene's (<a href="/bone-muscle">how they work</a>) · team 0G Health</p>
+          <div class="srcs__cr" id="credits">
+            <p class="label">Credits</p>
+            <p>Alerts and doctor call by <b>Mamadou</b>: the taps and long buzzes on the wrist, the lower button that calls the medical officer on board, the automatic call when a limit goes unanswered, blood oxygen (SpO2) and the pulse wave, the morning check and, with Nourchene, the weekly report. Built on his watch prototype for this tool and the story. Team 0G Health · NASA Space Apps 2026 · not a medical device.</p>
+            <p>Bone and muscle models by <b>Nourchene</b>, ported from her C code.</p>
+            <p class="chips"><a class="chip" href="/">Back to the story</a><a class="chip" href="/bone-muscle">Bone and muscle model</a></p>
+          </div>
         </div>
       </div>
     </section>
 
-    <p class="label app__foot">Baseline by team 0G Health · prototype · all data simulated · not a medical device</p>
   </div>
   <script>import '../story/app';</script>
 </Base>
@@ -241,7 +246,11 @@ import Base from '../layouts/Base.astro';
   .d__st { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .d__what { font-size: 16px; } .d__why { font-size: 15px; color: var(--mute); }
   .chart { position: relative; height: 210px; }
-  .app__foot { text-align: center; padding-top: 6px; }
+  .watch__cr { justify-self: start; margin-top: 6px; text-decoration: none; } .watch__cr:hover { color: var(--you); }
+  .srcs__cr { display: grid; gap: 8px; margin-top: 10px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .srcs__cr p:not(.label):not(.chips) { color: var(--mute); font-size: 14.5px; line-height: 1.5; text-wrap: pretty; }
+  .srcs__cr b { color: var(--bone); font-weight: 500; }
+  .srcs__cr .chips { margin-top: 6px; }
   /* calling the crew medical officer */
   .call { justify-self: center; min-height: 1.5em; text-align: center; transition: color 0.2s; }
   .call[data-phase='count'] { color: var(--limit); } .call[data-phase='ring'], .call[data-phase='on'] { color: var(--you); }

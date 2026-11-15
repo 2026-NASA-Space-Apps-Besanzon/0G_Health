@@ -8,9 +8,12 @@ import { Watch, WATCH, type Src, type CallView } from '../lib/watch';
 export function c00(sec: HTMLElement) {
   const bow = new Spring(0, ...SPRING.loose), bx = new Spring(0, ...SPRING.soft);
   let drift = 0;
+  const head = sec.querySelector<HTMLElement>('.ch__head')!, team = sec.querySelector<HTMLElement>('.team');
   scene(sec, {
     draw(c) {
-      const y0 = c.h * (c.w < 720 ? 0.7 : 0.66), max = Math.min(c.h * 0.2, 130);
+      // the line starts under the text (headline, team, challenge), never through it
+      const hb = Math.max(head.getBoundingClientRect().bottom, team?.getBoundingClientRect().bottom ?? 0) - c.stage.getBoundingClientRect().top;
+      const y0 = Math.min(c.h - 70, Math.max(c.h * (c.w < 720 ? 0.7 : 0.66), hb + 36)), max = Math.max(24, Math.min(c.h * 0.2, 130, c.h - y0 - 40));
       drift = reduced ? max * 0.5 : Math.min(max, drift + c.dt * 9);
       const y = y0 + drift;
       const near = c.inside && Math.abs(c.my - y) < 130;
